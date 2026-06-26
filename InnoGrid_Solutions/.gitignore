@@ -13,6 +13,9 @@ Thumbs.db
 **/terraform.tfstate
 **/terraform.tfstate.backup
 
+# Plan file (tracked in planning folder separately)
+plan.md
+
 # Secrets (avoid accidental commits)
 *.pem
 *.key
