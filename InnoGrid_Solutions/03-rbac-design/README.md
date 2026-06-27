@@ -2,12 +2,24 @@
 
 ## Status
 
-**Not yet implemented** — scenario template is in place.
+**Complete**
 
-## Planned Scope
+## Scenario
 
-- Define RBAC groups and permission sets for Engineering, IT, and cross-functional roles
-- Map job functions to IAM Identity Center groups with least-privilege permission sets
-- Implement Terraform modules for reusable group/permission-set definitions
-- Design for separation of duties: no single group grants both read and write to production
-- Just-in-time elevation workflow for production administrative access
+InnoGrid's ad-hoc group structure (50+ groups, duplicate permission sets, orphaned groups) is replaced with a formal RBAC model. The new design standardizes naming, enforces least privilege, and introduces JIT elevation for production admin access.
+
+## Key Files
+
+| File | Description |
+|---|---|
+| `scenario.md` | Current state problems, requirements, migration success criteria |
+| `design.md` | 3-layer RBAC taxonomy (Job Function → Role → Permission Set), 16 standardized groups, 5 permission set tiers, JIT elevation workflow, separation of duties matrix, migration strategy |
+| `implementation.md` | Terraform RBAC module, full config with all groups/permission sets, JIT Lambda, CloudWatch auto-expiry, PowerShell migration script (phase 1–5), verification commands |
+
+## Key Outcomes
+
+- 50+ ad-hoc groups consolidated to 16 standardized RBAC groups
+- 5 distinct permission set tiers instead of 8+ duplicates
+- Standing prod admin eliminated — JIT elevation with 1-hour auto-expiry
+- `<function>-<role>` naming convention enforced
+- All orphaned groups cleaned up

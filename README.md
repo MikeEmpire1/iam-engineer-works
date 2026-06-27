@@ -33,8 +33,8 @@ Each scenario contains:
 | # | Scenario | Status |
 |---|---|---|
 | 1 | User lifecycle (joiner/mover/leaver) | Complete |
-| 2 | Access certification / recertification | Pending |
-| 3 | RBAC design & implementation | Pending |
-| 4 | Federation / SSO setup | Pending |
-| 5 | Secrets rotation | Pending |
-| 6 | IAM incident response | Pending |
+| 2 | Access certification / recertification | Complete |
+| 3 | RBAC design & implementation | Complete |
+| 4 | Federation / SSO setup | Complete |
+| 5 | Secrets rotation | Complete |
+| 6 | IAM incident response | Complete |

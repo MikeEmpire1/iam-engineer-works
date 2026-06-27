@@ -2,12 +2,23 @@
 
 ## Status
 
-**Not yet implemented** — scenario template is in place.
+**Complete**
 
-## Planned Scope
+## Scenario
 
-- Configure Entra ID as an external identity provider for AWS IAM Identity Center
-- SCIM provisioning: automate user/group sync from Entra ID to IAM Identity Center
-- Configure SSO with AWS access portal as the single sign-on entry point
-- Implement conditional access policies in Entra ID (MFA, device compliance, location)
-- Test federation for corporate users (HR, Finance, Legal) vs IAM Identity Center-managed users (Engineering)
+Corporate users (HR, Finance, Legal, Exec) are manually duplicated across Entra ID and IAM Identity Center. The project configures Entra ID as an external IdP with SAML federation and SCIM provisioning, enabling automatic user sync and SSO via the Entra ID My Apps portal.
+
+## Key Files
+
+| File | Description |
+|---|---|
+| `scenario.md` | Business case, requirements, success criteria (including 15-min SCIM sync) |
+| `design.md` | Architecture diagram, SAML auth flow, SCIM sequence diagram, attribute mapping, conditional access policies, group sync design |
+| `implementation.md` | IdP metadata exchange, SAML app config, SCIM endpoint setup, 4 conditional access policies, test procedures (SSO, SCIM deprovisioning, Engineering fallback), monitoring queries |
+
+## Key Outcomes
+
+- Entra ID configured as external IdP with SAML 2.0 federation
+- SCIM provisioning enabled — users/groups sync automatically within ~40 minutes
+- 3 conditional access policies enforced (MFA, block legacy auth, device compliance)
+- Engineering users unaffected — direct IAM Identity Center auth preserved as fallback
