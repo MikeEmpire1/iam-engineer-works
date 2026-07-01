@@ -9,7 +9,7 @@ The CISO (Sarah Chen) has mandated a formal **RBAC (Role-Based Access Control)**
 - Every group must map to a business function, not an individual
 - Permission sets must follow least privilege
 - Production access requires just-in-time (JIT) elevation
-- Naming conventions must be standardized across all accounts
+- Naming conventions must be standardised across all accounts
 
 ## Current State (Problem)
 
@@ -24,7 +24,7 @@ The CISO (Sarah Chen) has mandated a formal **RBAC (Role-Based Access Control)**
 ## Requirements
 
 1. **Role taxonomy** — Define a clear hierarchy of roles: Job Function → Role → Permission Set
-2. **Naming convention** — Standardize group and permission set names across all 5 accounts
+2. **Naming convention** — Standardise group and permission set names across all 5 accounts
 3. **Least privilege** — No permission set grants more access than necessary for the role
 4. **JIT for production** — Engineers get standing read-only access to production; write access requires JIT elevation with approval
 5. **Terraform modules** — Reusable, version-controlled RBAC definitions
@@ -34,7 +34,7 @@ The CISO (Sarah Chen) has mandated a formal **RBAC (Role-Based Access Control)**
 ## Success Criteria
 
 - All 50+ groups consolidated into ≤15 RBAC-aligned groups
-- Permission sets standardized to 5 distinct tiers
+- Permission sets standardised to 5 distinct tiers
 - Production admin access requires JIT elevation (no standing grants)
 - Terraform modules used to deploy all RBAC resources
 - Migration completed with zero unplanned downtime

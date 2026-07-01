@@ -6,7 +6,7 @@
 
 ## Scenario
 
-A SOC 2 audit finding reveals IAM keys over 500 days old, RDS passwords never rotated, and break-glass credentials unchanged for 18 months. The IAM team implements Lambda-backed automated rotation for all secrets via AWS Secrets Manager.
+A Cyber Essentials Plus audit finding reveals IAM keys over 500 days old, RDS passwords never rotated, and break-glass credentials unchanged for 18 months. The IAM team implements Lambda-backed automated rotation for all secrets via AWS Secrets Manager.
 
 ## Key Files
 

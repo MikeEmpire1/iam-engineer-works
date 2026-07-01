@@ -11,11 +11,11 @@
 
 ## 1. Generate Review Manifest
 
-### Step 1: Export Current IAM Identity Center Assignments
+### Step 1: Export Current IAM Identity Centre Assignments
 
 ```python
 # scripts/generate_review_manifest.py
-"""Queries IAM Identity Center and generates a CSV review manifest."""
+"""Queries IAM Identity Centre and generates a CSV review manifest."""
 
 import boto3
 import csv
@@ -194,7 +194,7 @@ IAM Team
 
 ```python
 # scripts/process_review_decisions.py
-"""Takes the completed review CSV and applies decisions to IAM Identity Center."""
+"""Takes the completed review CSV and applies decisions to IAM Identity Centre."""
 
 import boto3
 import csv
@@ -354,7 +354,7 @@ report = {
         "start": "2026-07-01",
         "end": "2026-07-14"
     },
-    "scope": "All IAM Identity Center users with AWS account access",
+    "scope": "All IAM Identity Centre users with AWS account access",
     "total_users": 19,
     "total_assignments": 24,
     "decisions": {
@@ -454,8 +454,8 @@ report = {
         }
     ],
     "controls_mapped": [
-        "SOC 2 CC6.1 - Logical access",
-        "SOC 2 CC6.3 - Periodic access review",
+        "Cyber Essentials Plus - Logical access",
+        "Cyber Essentials Plus - Periodic access review",
         "ISO 27001 A.9.2.5 - Review of user access rights",
         "ISO 27001 A.9.2.6 - Removal of access rights"
     ],
@@ -505,11 +505,11 @@ ORDER BY eventtime;
 4. Reviewers: Group owners (managers)
 5. Schedule: One-time (July 1–14)
 6. Auto-apply: Disabled (IAM team reviews results first)
-7. On completion: Export results → merge with IAM Identity Center report
+7. On completion: Export results → merge with IAM Identity Centre report
 
-### Apply Group Changes in IAM Identity Center Console
+### Apply Group Changes in IAM Identity Centre Console
 
-1. **AWS Console** → IAM Identity Center → Groups
+1. **AWS Console** → IAM Identity Centre → Groups
 2. For **Miguel Torres**: Open `iam-engineers` group → remove user; open `sandbox-users` → remove user
 3. For **Chris Evans**: Open `marketing-dev` group → remove user
 4. For **Grace Kim**: Open each group she belongs to → remove user from all

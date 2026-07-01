@@ -24,7 +24,7 @@
     ▼     ▼     ▼                     ▼         ▼         ▼
 ┌────────┐┌────────┐┌────────┐ ┌──────────┐┌────────┐┌──────────┐
 │Platform││App Dev ││  QA &  │ │IAM Team  ││  SOC   ││IT Support│
-│ Eng    ││Manager ││Testing │ │          ││        ││ Helpdesk │
+│ Eng    ││Manager ││Testing │ │          ││        ││ Service Desk │
 │Mgr     ││        ││Manager │ │          ││        ││          │
 └────────┘└────────┘└────────┘ └──────────┘└────────┘└──────────┘
 ```
@@ -38,24 +38,24 @@
 - **Sarah Chen** — Chief Information Security Officer (CISO) — Entra ID
 
 ### Engineering (Reports to CTO)
-- **James Okafor** — VP of Engineering — IAM Identity Center
-  - **Priya Sharma** — Platform Engineering Manager — IAM Identity Center
-  - **Derek Jones** — Application Development Manager — IAM Identity Center
-  - **Lisa Kim** — QA & Testing Manager — IAM Identity Center
+- **James Okafor** — VP of Engineering — IAM Identity Centre
+  - **Priya Sharma** — Platform Engineering Manager — IAM Identity Centre
+  - **Derek Jones** — Application Development Manager — IAM Identity Centre
+  - **Lisa Kim** — QA & Testing Manager — IAM Identity Centre
 
 ### IT & Security (Reports to CISO)
 - _IAM Team_
-  - **Ryan Mitchell** — IAM Lead — IAM Identity Center
-  - **Aisha Patel** — IAM Engineer (Senior) — IAM Identity Center
-  - **Miguel Torres** — IAM Engineer — IAM Identity Center
+  - **Ryan Mitchell** — IAM Lead — IAM Identity Centre
+  - **Aisha Patel** — IAM Engineer (Senior) — IAM Identity Centre
+  - **Miguel Torres** — IAM Engineer — IAM Identity Centre
 - _Security Operations_
-  - **Tanya Brooks** — SOC Manager — IAM Identity Center
-  - **Jake Hoffman** — SOC Analyst (Senior) — IAM Identity Center
-  - **Olivia Reed** — SOC Analyst — IAM Identity Center
+  - **Tanya Brooks** — SOC Manager — IAM Identity Centre
+  - **Jake Hoffman** — SOC Analyst (Senior) — IAM Identity Centre
+  - **Olivia Reed** — SOC Analyst — IAM Identity Centre
 - _IT Support_
-  - **Carlos Mendez** — IT Support Manager — IAM Identity Center
-  - **Emily Zhao** — Helpdesk Technician (Senior) — IAM Identity Center
-  - **Kevin Nguyen** — Helpdesk Technician — IAM Identity Center
+  - **Carlos Mendez** — IT Support Manager — IAM Identity Centre
+  - **Emily Zhao** — Service Desk Technician (Senior) — IAM Identity Centre
+  - **Kevin Nguyen** — Service Desk Technician — IAM Identity Centre
 
 ### HR
 - **Rebecca Torres** — VP of HR — Entra ID

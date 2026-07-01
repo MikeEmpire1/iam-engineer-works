@@ -1,6 +1,6 @@
 # 00 — Company Context
 
-Background materials that define InnoGrid Solutions as an organization, used as the foundation for all IAM scenarios.
+Background materials that define InnoGrid Solutions as an organisation, used as the foundation for all IAM scenarios.
 
 ## Files
 

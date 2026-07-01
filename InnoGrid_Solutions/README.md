@@ -10,13 +10,13 @@ This directory contains the complete IAM engineering portfolio for InnoGrid Solu
 | `01-user-lifecycle/` | Joiner/mover/leaver identity lifecycle automation |
 | `02-access-certification/` | Periodic access review and recertification |
 | `03-rbac-design/` | Role-based access control group/permission set design |
-| `04-federation-sso/` | Entra ID ↔ AWS IAM Identity Center federation |
+| `04-federation-sso/` | Entra ID ↔ AWS IAM Identity Centre federation |
 | `05-secrets-rotation/` | AWS Secrets Manager automated rotation |
 | `06-incident-response/` | IAM incident detection, containment, and remediation |
 
 ## Key Design Principles
 
 - **Least privilege** — JIT access for production, group-based permission sets
-- **Separation of duties** — Identity source split: Entra ID (corporate), IAM Identity Center (engineering)
+- **Separation of duties** — Identity source split: Entra ID (corporate), IAM Identity Centre (engineering)
 - **Audit-first** — Every operation logged to CloudTrail with HR ticket references
-- **Compliance-driven** — SOC 2, ISO 27001, HIPAA controls inform every design decision
+- **Compliance-driven** — Cyber Essentials Plus, ISO 27001, UK DPA 2018 controls inform every design decision

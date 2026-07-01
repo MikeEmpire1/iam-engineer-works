@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Terraform 1.5+ with AWS provider configured for Management account
-- AWS IAM Identity Center enabled with instance ARN
+- AWS IAM Identity Centre enabled with instance ARN
 - Existing ad-hoc groups documented for migration tracking
 - Jira project for JIT approval workflow
 
@@ -13,7 +13,7 @@
 
 ```hcl
 # terraform/modules/rbac/main.tf
-# Reusable RBAC module for IAM Identity Center
+# Reusable RBAC module for IAM Identity Centre
 
 variable "identity_store_id" {
   type = string
@@ -222,8 +222,8 @@ module "rbac" {
     "soc-support" = {
       description = "SOC support"
     }
-    "helpdesk-support" = {
-      description = "Helpdesk technicians"
+    "service-desk-support" = {
+      description = "Service Desk technicians"
     }
     "finance-reader" = {
       description = "Finance team (read-only)"
@@ -295,7 +295,7 @@ terraform apply rbac.tfplan
 
 ```python
 # lambdas/jit_elevation/app.py
-"""Self-service JIT elevation handler triggered by IAM Identity Center events."""
+"""Self-service JIT elevation handler triggered by IAM Identity Centre events."""
 
 import boto3
 import os
@@ -406,7 +406,7 @@ $migration = @{
     "miguel.torres@innogrid.com" = @("iam-admin")
     "jake.hoffman@innogrid.com" = @("soc-analyst")
     "olivia.reed@innogrid.com" = @("soc-analyst")
-    "emily.zhao@innogrid.com" = @("helpdesk-support")
+    "emily.zhao@innogrid.com" = @("service-desk-support")
     "amanda.foster@innogrid.com" = @("hr-reader")
     "jordan.bell@innogrid.com" = @("hr-reader")
     "diana.cruz@innogrid.com" = @("finance-reader")
@@ -421,7 +421,7 @@ $migration = @{
     "lisa.kim@innogrid.com" = @("qa-engineer")
     "ryan.mitchell@innogrid.com" = @("iam-admin")
     "tanya.brooks@innogrid.com" = @("soc-analyst")
-    "carlos.mendez@innogrid.com" = @("helpdesk-support")
+    "carlos.mendez@innogrid.com" = @("service-desk-support")
     "james.okafo@innogrid.com" = @("platform-engineering-lead")
     "david.park@innogrid.com" = @("executive-reader")
     "elena.vasquez@innogrid.com" = @("executive-reader")
@@ -516,7 +516,7 @@ aws identitystore list-groups --identity-store-id d-9a7b8c6d5e | ConvertFrom-Jso
 
 ### Create a Permission Set
 
-1. **AWS Console** → IAM Identity Center → Permission sets → **Create permission set**
+1. **AWS Console** → IAM Identity Centre → Permission sets → **Create permission set**
 2. Select **Custom permission set**
 3. Name: `Nonprod-Dev`
 4. Session duration: 8 hours
@@ -527,7 +527,7 @@ aws identitystore list-groups --identity-store-id d-9a7b8c6d5e | ConvertFrom-Jso
 
 ### Assign a Group to an Account
 
-1. **AWS Console** → IAM Identity Center → AWS accounts → `inno-nonprod`
+1. **AWS Console** → IAM Identity Centre → AWS accounts → `inno-nonprod`
 2. **Assign users/groups** → Select `platform-engineering-engineer`
 3. Select permission set: `Nonprod-Dev`
 4. Confirm
@@ -538,7 +538,7 @@ aws identitystore list-groups --identity-store-id d-9a7b8c6d5e | ConvertFrom-Jso
 
 | Old State | New State |
 |---|---|
-| 50+ ad-hoc groups | 16 standardized RBAC groups |
+| 50+ ad-hoc groups | 16 standardised RBAC groups |
 | 8+ duplicate permission sets | 5 distinct permission set tiers |
 | Standing prod admin access | JIT elevation with 1-hour auto-expiry |
 | No naming convention | `<function>-<role>` format |

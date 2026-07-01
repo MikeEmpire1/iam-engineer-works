@@ -4,7 +4,7 @@
 
 - AWS CLI configured with administrative access to the Management account
 - Terraform Cloud / OSS with AWS provider
-- `aws-sso-admin` CLI or AWS Console access to IAM Identity Center
+- `aws-sso-admin` CLI or AWS Console access to IAM Identity Centre
 - HR ticket numbers: `HR-2026-071` (Daniel Park), `HR-2026-072` (Maya Johnson transfer), `HR-2026-069` (Kevin Nguyen termination)
 - IAM ticket numbers: `IAM-2026-042`, `IAM-2026-043`, `IAM-2026-044`
 
@@ -12,10 +12,10 @@
 
 ## 1. Joiner — Daniel Park
 
-### 1.1 Terraform: Create IAM Identity Center User
+### 1.1 Terraform: Create IAM Identity Centre User
 
 ```hcl
-# terraform/identity-center/users.tf
+# terraform/identity-centre/users.tf
 
 resource "aws_identitystore_user" "daniel_park" {
   identity_store_id = "d-9a7b8c6d5e"
@@ -34,7 +34,7 @@ resource "aws_identitystore_user" "daniel_park" {
   }
 
   user_type = "IC3"
-  locale    = "en-US"
+  locale    = "en-GB"
 
   lifecycle {
     # Prevent accidental deletion; manual override only
@@ -58,7 +58,7 @@ resource "aws_identitystore_group_membership" "daniel_park_platform_engineers" {
 ### 1.2 Terraform: Assign Permission Set to Account
 
 ```hcl
-# terraform/identity-center/assignments.tf
+# terraform/identity-centre/assignments.tf
 
 resource "aws_ssoadmin_permission_set_inline_policy" "dev_access" {
   instance_arn       = "arn:aws:sso:::instance/ssoins-1234567890abcdef"
@@ -103,7 +103,7 @@ resource "aws_ssoadmin_account_assignment" "dev_access_engineering" {
 ### 1.3 Verification (AWS CLI)
 
 ```powershell
-# Verify user exists in IAM Identity Center
+# Verify user exists in IAM Identity Centre
 aws identitystore list-users --identity-store-id d-9a7b8c6d5e `
   --filter AttributePath=UserName,AttributeValue=daniel.park@innogrid.com
 
@@ -120,14 +120,14 @@ aws sso-admin list-account-assignments --instance-arn "arn:aws:sso:::instance/ss
 
 ### 1.4 Console Workflow (Manual Alternative)
 
-1. **AWS Console** → AWS IAM Identity Center → Users → **Add user**
+1. **AWS Console** → AWS IAM Identity Centre → Users → **Add user**
    - Username: `daniel.park@innogrid.com`
    - Email: `daniel.park@innogrid.com`
    - First name: Daniel, Last name: Park
    - Display name: Daniel Park
    - Groups: Select `engineering`, `platform-engineers`
 
-2. **AWS Console** → IAM Identity Center → AWS accounts → `inno-nonprod` → **Assign users/groups**
+2. **AWS Console** → IAM Identity Centre → AWS accounts → `inno-nonprod` → **Assign users/groups**
    - Select `engineering` group
    - Permission set: `DevAccess`
 
@@ -140,7 +140,7 @@ aws sso-admin list-account-assignments --instance-arn "arn:aws:sso:::instance/ss
 ### 2.1 Terraform: Update Group Memberships
 
 ```hcl
-# terraform/identity-center/maya-johnson-move.tf
+# terraform/identity-centre/maya-johnson-move.tf
 
 # Fetch Maya's user ID (data source)
 data "aws_identitystore_user" "maya_johnson" {
@@ -192,14 +192,14 @@ aws identitystore create-group-membership --identity-store-id d-9a7b8c6d5e `
   --group-id $groupId --member-id $userId
 
 # Step 4: Update manager attribute (if using custom attributes)
-# Note: IAM Identity Center does not natively support "manager" as a default attribute.
+# Note: IAM Identity Centre does not natively support "manager" as a default attribute.
 # This would be tracked in the IAM ticket metadata.
 Write-Host "Manager updated: Derek Jones -> Priya Sharma (tracked in IAM-2026-043)"
 ```
 
 ### 2.3 Console Workflow (Manual Alternative)
 
-1. **AWS Console** → IAM Identity Center → Users → `maya.johnson@innogrid.com`
+1. **AWS Console** → IAM Identity Centre → Users → `maya.johnson@innogrid.com`
    - **Groups tab** → Remove from `app-dev`
    - **Groups tab** → Add to `platform-engineers`
 
@@ -251,9 +251,9 @@ foreach ($membership in ($memberships | ConvertFrom-Json)) {
 }
 
 # Step 3: Deactivate the user
-# Note: IAM Identity Center doesn't directly support user deactivation via API.
+# Note: IAM Identity Centre doesn't directly support user deactivation via API.
 # Instead, the user's status is managed at the identity source level.
-# For IAM Identity Center-managed users, we cannot fully "deactivate" — we must delete
+# For IAM Identity Centre-managed users, we cannot fully "deactivate" — we must delete
 # or use the Console to set status to DISABLED.
 # Using the Console for this step (see 3.2).
 
@@ -267,7 +267,7 @@ $auditLog = @"
   "iamTicket": "$iamTicket",
   "performedBy": "aisha.patel@innogrid.com",
   "timestamp": "$timestamp",
-  "action": "All group memberships removed; user deactivated in IAM Identity Center"
+  "action": "All group memberships removed; user deactivated in IAM Identity Centre"
 }
 "@
 
@@ -277,7 +277,7 @@ Write-Host $auditLog
 
 ### 3.2 Console Workflow: Deactivate User
 
-1. **AWS Console** → AWS IAM Identity Center → Users → `kevin.nguyen@innogrid.com`
+1. **AWS Console** → AWS IAM Identity Centre → Users → `kevin.nguyen@innogrid.com`
 2. Click **Disable user access**
    - A confirmation dialog explains: "The user will no longer be able to sign in to the user portal. Group memberships and permission sets remain assigned but cannot be used until the user is re-enabled."
 3. Verify the user shows status: **Disabled**
@@ -289,7 +289,7 @@ Write-Host $auditLog
 aws sso-admin list-account-assignments --instance-arn $instanceArn `
   --account-id 111111111111 --query "AccountAssignments"  # Security account
 
-# IAM Identity Center sessions expire based on the session duration.
+# IAM Identity Centre sessions expire based on the session duration.
 # To force logout, the user's token can be invalidated by:
 # 1. Disabling the user (done above)
 # 2. Removing permission set assignments (done via group removal above)
@@ -325,10 +325,10 @@ Write-Host "=============================="
 
 ### 3.5 Console Workflow for Verification
 
-1. **AWS Console** → IAM Identity Center → Users → Kevin Nguyen
+1. **AWS Console** → IAM Identity Centre → Users → Kevin Nguyen
    - Status should show **Disabled**
    - Groups tab should show **0 groups**
-2. **AWS Console** → IAM Identity Center → Dashboard → **Audit log**
+2. **AWS Console** → IAM Identity Centre → Dashboard → **Audit log**
    - Filter by user `kevin.nguyen` to confirm all events captured in CloudTrail
 
 ---
@@ -367,7 +367,7 @@ switch ($EventType) {
     Write-AuditLog "PROCESSING JOINER: $UserEmail (Ticket: $HrTicket / $IamTicket)"
 
     # Create user via Terraform
-    Set-Location "C:\terraform\identity-center"
+    Set-Location "C:\terraform\identity-centre"
     terraform apply -auto-approve `
       -target="aws_identitystore_user.$($UserEmail.Replace('@','_').Replace('.','_'))"
 
@@ -466,17 +466,17 @@ ORDER BY eventtime;
 
 | Event | Source | API Call |
 |---|---|---|
-| User created | IAM Identity Center | `CreateUser` |
-| Group membership added | IAM Identity Center | `CreateGroupMembership` |
-| Group membership removed | IAM Identity Center | `DeleteGroupMembership` |
-| User disabled | IAM Identity Center | `UpdateUser` (Status → DISABLED) |
-| Permission set assigned | IAM Identity Center | `CreateAccountAssignment` |
+| User created | IAM Identity Centre | `CreateUser` |
+| Group membership added | IAM Identity Centre | `CreateGroupMembership` |
+| Group membership removed | IAM Identity Centre | `DeleteGroupMembership` |
+| User disabled | IAM Identity Centre | `UpdateUser` (Status → DISABLED) |
+| Permission set assigned | IAM Identity Centre | `CreateAccountAssignment` |
 
 ### HR Reconciliation (Post-Processing)
 
 ```powershell
 # scripts/hr-reconciliation.ps1
-# Weekly reconciliation between HR roster and IAM Identity Center
+# Weekly reconciliation between HR roster and IAM Identity Centre
 
 $identityStoreId = "d-9a7b8c6d5e"
 $iamUsers = aws identitystore list-users --identity-store-id $identityStoreId `
@@ -489,7 +489,7 @@ foreach ($iamUser in $iamUsers) {
   $email = $iamUser[1]
   $match = $hrRoster | Where-Object { $_.Email -eq $email }
   if (-not $match) {
-    Write-Host "WARNING: $email exists in IAM Identity Center but not in HR roster"
+    Write-Host "WARNING: $email exists in IAM Identity Centre but not in HR roster"
   }
 }
 
@@ -502,6 +502,6 @@ Write-Host "=== DONE ==="
 
 | Event | User | Action | Success Criteria Met? |
 |---|---|---|---|
-| Joiner | Daniel Park | Created in IAM Identity Center, added to `engineering` + `platform-engineers`, `DevAccess` assigned to `inno-nonprod` | Can sign in and access nonprod via DevAccess |
+| Joiner | Daniel Park | Created in IAM Identity Centre, added to `engineering` + `platform-engineers`, `DevAccess` assigned to `inno-nonprod` | Can sign in and access nonprod via DevAccess |
 | Mover | Maya Johnson | Removed from `app-dev`, added to `platform-engineers`, manager updated | Access unchanged (still in `engineering`), group membership corrected |
 | Leaver | Kevin Nguyen | All group memberships removed, user disabled in console, CISO+SOC notified | Cannot sign in, no active groups, audit trail complete |

@@ -6,7 +6,7 @@
 
 ## Scenario
 
-The CISO kicks off the Q3 2026 access review campaign. 11 managers review their 19 direct reports' access across IAM Identity Center and Entra ID. Miguel Torres has Sandbox access removed, Chris Evans loses Nonproduction access, and Grace Kim's access is suspended during parental leave.
+The CISO kicks off the Q3 2026 access review campaign. 11 managers review their 19 direct reports' access across IAM Identity Centre and Entra ID. Miguel Torres has Sandbox access removed, Chris Evans loses Nonproduction access, and Grace Kim's access is suspended during parental leave.
 
 ## Key Files
 
@@ -21,4 +21,4 @@ The CISO kicks off the Q3 2026 access review campaign. 11 managers review their 
 - 19 users recertified, 100% completion rate
 - 2 modifications applied (Miguel Torres, Chris Evans)
 - 1 suspension with automated restoration (Grace Kim)
-- Compliance report generated for SOC 2 + ISO 27001 audit
+- Compliance report generated for Cyber Essentials Plus + ISO 27001 audit

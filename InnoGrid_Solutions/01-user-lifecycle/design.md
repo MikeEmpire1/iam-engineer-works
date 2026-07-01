@@ -19,7 +19,7 @@ InnoGrid's user lifecycle follows a **source-of-truth** model where the identity
 │            │ SCIM Sync                  │ Manual or            │
 │            ▼                            ▼ scripted             │
 │   ┌──────────────────────────────────────────────┐             │
-│   │         AWS IAM Identity Center              │             │
+│   │         AWS IAM Identity Centre              │             │
 │   │   (Single pane of glass for AWS access)      │             │
 │   │                                              │             │
 │   │  Users ←→ Groups ←→ Permission Sets ←→ AWS  │             │
@@ -38,12 +38,12 @@ InnoGrid's user lifecycle follows a **source-of-truth** model where the identity
 
 ```
 Is the user in Engineering or IT?
-  ├── YES → Managed directly in AWS IAM Identity Center
+  ├── YES → Managed directly in AWS IAM Identity Centre
   │         (IAM team creates/manages user via Terraform or console)
   │
   └── NO  → Managed in Entra ID
             (IAM team triggers HR to create user in Entra ID;
-             SCIM syncs to IAM Identity Center automatically)
+             SCIM syncs to IAM Identity Centre automatically)
 ```
 
 ## Joiner Process
@@ -51,9 +51,9 @@ Is the user in Engineering or IT?
 ```mermaid
 flowchart TD
     A[HR sends new-hire notification] --> B{Identity source?}
-    B -->|Engineering/IT| C[IAM team creates user in IAM Identity Center]
+    B -->|Engineering/IT| C[IAM team creates user in IAM Identity Centre]
     B -->|Corporate| D[HR creates user in Entra ID]
-    D --> E[SCIM syncs to IAM Identity Center]
+    D --> E[SCIM syncs to IAM Identity Centre]
     C --> F[Assign to groups]
     E --> F
     F --> G[User accesses AWS via portal]
@@ -62,7 +62,7 @@ flowchart TD
 
 ### Group Design for Engineering Users
 
-| Group Name | IAM Identity Center Group | Permission Set | Target Account |
+| Group Name | IAM Identity Centre Group | Permission Set | Target Account |
 |---|---|---|---|
 | `engineering` | All Engineers | `DevAccess` | Nonproduction |
 | `platform-engineers` | Platform team | `DevAccess` | Nonproduction |
@@ -106,7 +106,7 @@ flowchart TD
     A[HR sends termination notice] --> B[Suspend user in identity source]
     B --> C[Revoke all active sessions]
     C --> D[Remove all group memberships]
-    D --> E[Deactivate user in IAM Identity Center]
+    D --> E[Deactivate user in IAM Identity Centre]
     E --> F[Archive home directory + logs]
     F --> G[Notify CISO + SOC]
     G --> H[Log to CloudTrail + ticket system]
@@ -115,11 +115,11 @@ flowchart TD
 
 ### Leaver Steps (detailed)
 
-1. **Suspend** — Disable the user in the identity source (IAM Identity Center or Entra ID)
-2. **Revoke sessions** — Clear active IAM Identity Center sessions so the user is logged out immediately
+1. **Suspend** — Disable the user in the identity source (IAM Identity Centre or Entra ID)
+2. **Revoke sessions** — Clear active IAM Identity Centre sessions so the user is logged out immediately
 3. **Remove groups** — Strip all group memberships so no AWS accounts are accessible
-4. **Deactivate** — Set the user status to `DISABLED` in IAM Identity Center
-5. **Archive** — Preserve CloudTrail logs, IAM Identity Center events, and any S3 home directory for 90 days
+4. **Deactivate** — Set the user status to `DISABLED` in IAM Identity Centre
+5. **Archive** — Preserve CloudTrail logs, IAM Identity Centre events, and any S3 home directory for 90 days
 6. **Notify** — Send confirmation to CISO (Sarah Chen) and SOC (Tanya Brooks)
 7. **Purge** — After 90-day retention, delete the user permanently
 
@@ -137,14 +137,14 @@ Every lifecycle operation must record:
 | **Timestamp** | `2026-06-26T09:15:00Z` |
 | **Change detail** | `Created user + assigned engineering,platform-engineers groups` |
 
-These are captured in CloudTrail (for IAM Identity Center API calls) and in a local audit log for HR reference.
+These are captured in CloudTrail (for IAM Identity Centre API calls) and in a local audit log for HR reference.
 
 ## Compliance Mapping
 
 | Requirement | Control | How It's Met |
 |---|---|---|
-| SOC 2 CC6.1 | Logical access | Identity source → IAM Identity Center → groups → permission sets |
-| SOC 2 CC6.2 | Timely deprovisioning | Leaver process: suspend within 1 hour, deactivate within 24 hours |
-| SOC 2 CC6.3 | Access reviews | Group membership changes logged and reviewed monthly |
+| Cyber Essentials Plus | Logical access | Identity source → IAM Identity Centre → groups → permission sets |
+| Cyber Essentials Plus | Timely deprovisioning | Leaver process: suspend within 1 hour, deactivate within 24 hours |
+| Cyber Essentials Plus | Access reviews | Group membership changes logged and reviewed monthly |
 | ISO 27001 A.9.2.1 | User registration & de-registration | Documented joiner/leaver workflow with audit trail |
 | ISO 27001 A.9.2.5 | Review of user access rights | Mover process updates groups immediately on role change |

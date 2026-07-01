@@ -16,12 +16,12 @@ Job Function ───► Role ───► Permission Set
 
 | Function | Department(s) | Identity Source |
 |---|---|---|
-| `platform-engineering` | Platform Engineering | IAM Identity Center |
-| `app-dev` | Application Development | IAM Identity Center |
-| `qa` | QA & Testing | IAM Identity Center |
-| `iam` | IAM Team | IAM Identity Center |
-| `soc` | SOC | IAM Identity Center |
-| `helpdesk` | IT Support | IAM Identity Center |
+| `platform-engineering` | Platform Engineering | IAM Identity Centre |
+| `app-dev` | Application Development | IAM Identity Centre |
+| `qa` | QA & Testing | IAM Identity Centre |
+| `iam` | IAM Team | IAM Identity Centre |
+| `soc` | SOC | IAM Identity Centre |
+| `service-desk` | IT Support | IAM Identity Centre |
 | `finance` | Finance | Entra ID → SCIM |
 | `hr` | HR | Entra ID → SCIM |
 | `legal` | Legal | Entra ID → SCIM |
@@ -41,7 +41,7 @@ Each job function has standardized roles:
 | `manager` | All | M2+ | Nonproduction read-write + Security read-write + Prod read-only |
 | `admin` | iam | IC3+ | All accounts except Prod write (JIT only) |
 | `analyst` | soc | IC2+ | Security read-write |
-| `support` | helpdesk | IC1+ | Security read-only |
+| `support` | service-desk | IC1+ | Security read-only |
 | `reader` | finance, hr, legal, marketing, operations | All | Prod read-only (cost/billing data) |
 | `exec-reader` | executive | Exec | All accounts read-only |
 
@@ -92,7 +92,7 @@ Example:        Nonprod-Dev
 | `iam-admin` | `Prod-ReadOnly` | Prod | Standing |
 | `soc-analyst` | `Security-Ops` | Security | Standing |
 | `soc-support` | `Security-ReadOnly` | Security | Standing |
-| `helpdesk-support` | `Security-ReadOnly` | Security | Standing |
+| `service-desk-support` | `Security-ReadOnly` | Security | Standing |
 | `finance-reader` | `Prod-ReadOnly` | Prod | Standing |
 | `hr-reader` | `Prod-ReadOnly` | Prod | Standing |
 | `legal-reader` | `Prod-ReadOnly` | Prod | Standing |
@@ -104,7 +104,7 @@ Example:        Nonprod-Dev
 
 ## JIT Elevation Design
 
-Production admin access uses a separate permission set (`Prod-Admin-JIT`) that is **not** assigned to any group by default. Users self-assign via the AWS IAM Identity Center access portal or via a custom approval workflow:
+Production admin access uses a separate permission set (`Prod-Admin-JIT`) that is **not** assigned to any group by default. Users self-assign via the AWS IAM Identity Centre access portal or via a custom approval workflow:
 
 ```mermaid
 flowchart LR
@@ -159,7 +159,7 @@ flowchart LR
 
 | Requirement | Control | How It's Met |
 |---|---|---|
-| SOC 2 CC6.1 | Logical access | Standardized RBAC groups prevent over-privilege |
-| SOC 2 CC5.2 | Segregation of duties | Separation of duties matrix enforced via distinct permission sets |
+| Cyber Essentials Plus | Logical access | Standardised RBAC groups prevent over-privilege |
+| Cyber Essentials Plus | Segregation of duties | Separation of duties matrix enforced via distinct permission sets |
 | ISO 27001 A.9.1.2 | Access to networks | JIT elevation for production limits standing access |
 | ISO 27001 A.9.2.3 | Privilege management | No standing admin — JIT with approval and auto-expiry |

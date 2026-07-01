@@ -55,7 +55,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = "eu-west-2"
   # Must be run from the Organizations management account
   assume_role {
     role_arn = "arn:aws:iam::111122223333:role/OrganizationAdmin"
@@ -421,7 +421,7 @@ aws rds create-db-instance `
 ### What Happens When an SCP Blocks an Action
 
 ```
-User (IAM Identity Center)
+User (IAM Identity Centre)
   │
   ▼
 Permission Set (e.g., PowerUserAccess)
@@ -478,7 +478,7 @@ Blocked actions do not generate GuardDuty findings by default. To monitor:
 | Workload accounts cannot disable security | `Deny-SecurityToolTampering` | GuardDuty, Security Hub, Config, CloudTrail are protected |
 | Nonprod accounts use cost-effective resources | `Deny-ProductionResourcesInNonprod` | Prod instance types and RDS classes are blocked |
 | Sandbox environments are ephemeral | `Deny-PersistentResourcesInSandbox` | RDS, Secrets Manager, persistent volumes denied |
-| Security tool admin is centralized | SCPs 7 + 9 combine | Only Security account can manage security tools; workload accounts are blocked |
+| Security tool admin is centralised | SCPs 7 + 9 combine | Only Security account can manage security tools; workload accounts are blocked |
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Background
 
-InnoGrid's SOC 2 Type II audit revealed a finding: **IAM access keys and database passwords are not rotated on a regular schedule**. Several service accounts have keys that are over 2 years old. The RDS databases use static passwords that have never been rotated.
+InnoGrid's Cyber Essentials Plus audit revealed a finding: **IAM access keys and database passwords are not rotated on a regular schedule**. Several service accounts have keys that are over 2 years old. The RDS databases use static passwords that have never been rotated.
 
 The CISO (Sarah Chen) has mandated automated rotation for all secrets:
 

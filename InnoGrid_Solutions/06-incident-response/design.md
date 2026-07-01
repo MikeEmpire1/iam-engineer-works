@@ -47,7 +47,7 @@ Containment
 | Level | Description | Response Time | Examples |
 |---|---|---|---|
 | **SEV-1** | Active data exfiltration, privilege escalation, or cryptomining | 15 min | This scenario |
-| **SEV-2** | Suspicious behavior, policy violations, single-user compromise | 1 hour | GuardDuty medium findings |
+| **SEV-2** | Suspicious behaviour, policy violations, single-user compromise | 1 hour | GuardDuty medium findings |
 | **SEV-3** | Minor policy violations, configuration drift | 24 hours | Untagged resources, stale keys |
 
 ## Response Playbook: IAM Credential Compromise
@@ -72,7 +72,7 @@ flowchart TD
 
 | Detection | Source | Trigger |
 |---|---|---|
-| Instance launched in unauthorized region | CloudTrail + EventBridge | `ec2:RunInstances` in region not in allowed list |
+| Instance launched in unauthorised region | CloudTrail + EventBridge | `ec2:RunInstances` in region not in allowed list |
 | IAM user creates access key for another user | CloudTrail | `iam:CreateAccessKey` with different user |
 | API call from Tor exit node | GuardDuty | `UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration.OutsideAWS` |
 | S3 data transfer to external IP | VPC Flow Logs + GuardDuty | Unexpected large egress |
@@ -104,8 +104,8 @@ flowchart TD
 
 | Requirement | Control | How It's Met |
 |---|---|---|
-| SOC 2 CC7.1 | Incident detection | GuardDuty + Security Hub + CloudTrail |
-| SOC 2 CC7.2 | Incident response | Documented playbook with 15-min SLA |
-| SOC 2 CC7.3 | Incident communication | PagerDuty → SOC → CISO escalation |
+| Cyber Essentials Plus | Incident detection | GuardDuty + Security Hub + CloudTrail |
+| Cyber Essentials Plus | Incident response | Documented playbook with 15-min SLA |
+| NCSC CAF | Incident communication | PagerDuty → SOC → CISO escalation |
 | ISO 27001 A.16.1.5 | Response to incidents | SEV-1: 15-min containment, SEV-2: 1-hour |
 | ISO 27001 A.16.1.7 | Collection of evidence | CloudTrail logs secured in immutable S3 bucket |

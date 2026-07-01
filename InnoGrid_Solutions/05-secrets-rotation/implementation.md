@@ -15,7 +15,7 @@
 # terraform/secrets-manager/main.tf
 
 provider "aws" {
-  region = "us-east-1"
+  region = "eu-west-2"
 }
 
 # KMS key for secret encryption
@@ -220,7 +220,7 @@ aws lambda create-function --function-name rotate-iam-keys `
 
 # Attach to each IAM key secret
 aws secretsmanager rotate-secret --secret-id iam/svc-cicd-deploy `
-  --rotation-lambda-arn arn:aws:lambda:us-east-1:111122223333:function:rotate-iam-keys
+  --rotation-lambda-arn arn:aws:lambda:eu-west-2:111122223333:function:rotate-iam-keys
 ```
 
 ---
@@ -336,7 +336,7 @@ secretsmanager = boto3.client("secretsmanager")
 iam = boto3.client("iam")
 sns = boto3.client("sns")
 
-SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:111122223333:rotation-notifications"
+SNS_TOPIC_ARN = "arn:aws:sns:eu-west-2:111122223333:rotation-notifications"
 
 def lambda_handler(event, context):
     secret_id = event["SecretId"]
@@ -438,14 +438,14 @@ def _finish_secret(secret_id, token):
 
 # IAM Service Account Keys
 aws secretsmanager create-secret --name iam/svc-cicd-deploy `
-  --secret-string '{"username":"svc-cicd-deploy","access_key_id_old":"","secret_access_key_old":"","access_key_id_current":"AKIAIOSFODNN7EXAMPLE","secret_access_key_current":"wJalrXUt...","account_id":"123456789012","region":"us-east-1","rotation_date":"2026-07-01"}'
+  --secret-string '{"username":"svc-cicd-deploy","access_key_id_old":"","secret_access_key_old":"","access_key_id_current":"AKIAIOSFODNN7EXAMPLE","secret_access_key_current":"wJalrXUt...","account_id":"123456789012","region":"eu-west-2","rotation_date":"2026-07-01"}'
 
 aws secretsmanager create-secret --name iam/svc-backup-agent `
-  --secret-string '{"username":"svc-backup-agent","access_key_id_old":"","secret_access_key_old":"","access_key_id_current":"AKIAI44QH8DHBEXAMPLE","secret_access_key_current":"wJalrXUt...","account_id":"777788889999","region":"us-east-1","rotation_date":"2026-07-01"}'
+  --secret-string '{"username":"svc-backup-agent","access_key_id_old":"","secret_access_key_old":"","access_key_id_current":"AKIAI44QH8DHBEXAMPLE","secret_access_key_current":"wJalrXUt...","account_id":"777788889999","region":"eu-west-2","rotation_date":"2026-07-01"}'
 
 # RDS Secrets
 aws secretsmanager create-secret --name rds/innodb-prod-app `
-  --secret-string '{"dbInstanceIdentifier":"innodb-prod-app","engine":"postgres","host":"innodb-prod-app.abcdef.us-east-1.rds.amazonaws.com","port":5432,"username":"app_user","password":"initial-password","dbname":"appdb"}'
+  --secret-string '{"dbInstanceIdentifier":"innodb-prod-app","engine":"postgres","host":"innodb-prod-app.abcdef.eu-west-2.rds.amazonaws.com","port":5432,"username":"app_user","password":"initial-password","dbname":"appdb"}'
 
 # Break-Glass Secrets
 aws secretsmanager create-secret --name break-glass/break-glass-prod `
@@ -472,9 +472,9 @@ $secrets = @(
   "break-glass/break-glass-sandbox"
 )
 
-$lambdaArn = "arn:aws:lambda:us-east-1:111122223333:function:rotate-iam-keys"
-$rdsLambdaArn = "arn:aws:lambda:us-east-1:111122223333:function:rotate-rds-password"
-$breakGlassLambdaArn = "arn:aws:lambda:us-east-1:111122223333:function:rotate-breakglass"
+$lambdaArn = "arn:aws:lambda:eu-west-2:111122223333:function:rotate-iam-keys"
+$rdsLambdaArn = "arn:aws:lambda:eu-west-2:111122223333:function:rotate-rds-password"
+$breakGlassLambdaArn = "arn:aws:lambda:eu-west-2:111122223333:function:rotate-breakglass"
 
 foreach ($secret in $secrets) {
   if ($secret -like "iam/*") {
@@ -536,7 +536,7 @@ ORDER BY eventtime DESC;
 ```powershell
 # Simulate a rotation failure to verify alerting
 aws secretsmanager rotate-secret --secret-id iam/svc-cicd-deploy `
-  --rotation-lambda-arn arn:aws:lambda:us-east-1:111122223333:function:rotate-iam-keys `
+  --rotation-lambda-arn arn:aws:lambda:eu-west-2:111122223333:function:rotate-iam-keys `
   --rotate-immediately
 ```
 

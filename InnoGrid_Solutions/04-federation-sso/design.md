@@ -4,7 +4,7 @@
 
 ```
 ┌──────────────────────────────┐     ┌──────────────────────────────┐
-│  Microsoft Entra ID          │     │  AWS IAM Identity Center     │
+│  Microsoft Entra ID          │     │  AWS IAM Identity Centre     │
 │  (Corporate IdP)             │     │  (AWS SSO)                   │
 │                              │     │                              │
 │  Users:                       │     │  Users:                      │
@@ -13,7 +13,7 @@
 │  Auth: SAML 2.0 ─────────────┼────►│  - Engineering auth: direct  │
 │  SCIM: /scim ────────────────┼────►│                              │
 │                              │     │  Groups: SCIM-synced +       │
-│  Conditional Access:         │     │  IAM Identity Center-native  │
+│  Conditional Access:         │     │  IAM Identity Centre-native  │
 │  - MFA required              │     │                              │
 │  - Device compliance for     │     │  Permission Sets → AWS      │
 │    production                │     │  Accounts                    │
@@ -28,7 +28,7 @@ sequenceDiagram
     participant User as Corporate User
     participant Entra as Entra ID
     participant Portal as My Apps Portal
-    participant IC as IAM Identity Center
+    participant IC as IAM Identity Centre
     participant AWS as AWS Account
 
     User->>Entra: Sign in (username + password)
@@ -39,7 +39,7 @@ sequenceDiagram
     Portal->>Portal: Show AWS app tile
     User->>Portal: Click AWS app
     Portal->>IC: SAML assertion (federated auth)
-    IC->>IC: Map SAML attributes to IAM Identity Center user
+    IC->>IC: Map SAML attributes to IAM Identity Centre user
     IC->>AWS: Resolve permission sets
     AWS->>User: AWS Management Console access
 ```
@@ -50,7 +50,7 @@ sequenceDiagram
 sequenceDiagram
     participant HR as Workday
     participant Entra as Entra ID
-    participant IC as IAM Identity Center
+    participant IC as IAM Identity Centre
     participant AWS as AWS Accounts
 
     HR->>Entra: New employee provisioned
@@ -68,7 +68,7 @@ sequenceDiagram
 
 ## Attribute Mapping
 
-| Entra ID Attribute | IAM Identity Center Attribute | Notes |
+| Entra ID Attribute | IAM Identity Centre Attribute | Notes |
 |---|---|---|
 | `userPrincipalName` | `userName` | Login identifier |
 | `displayName` | `displayName` | Display name |
@@ -91,9 +91,9 @@ sequenceDiagram
 
 ## Group Sync Design
 
-Only corporate groups needed for RBAC are synced to IAM Identity Center:
+Only corporate groups needed for RBAC are synced to IAM Identity Centre:
 
-| Entra ID Group | IAM Identity Center Group | SCIM Sync |
+| Entra ID Group | IAM Identity Centre Group | SCIM Sync |
 |---|---|---|
 | `HR-Team` | `hr-reader` | Enabled |
 | `Finance-Team` | `finance-reader` | Enabled |
@@ -102,13 +102,13 @@ Only corporate groups needed for RBAC are synced to IAM Identity Center:
 | `Operations-Team` | `operations-reader` | Enabled |
 | `Executive-Team` | `executive-reader` | Enabled |
 
-Engineering groups (`platform-engineering-engineer`, `iam-admin`, etc.) remain **IAM Identity Center-native** — not synced from Entra ID.
+Engineering groups (`platform-engineering-engineer`, `iam-admin`, etc.) remain **IAM Identity Centre-native** — not synced from Entra ID.
 
 ## Compliance Mapping
 
 | Requirement | Control | How It's Met |
 |---|---|---|
-| SOC 2 CC6.1 | Logical access | SSO with MFA for all AWS access |
-| SOC 2 CC6.6 | Authorization | SCIM auto-deprovisions on termination |
+| Cyber Essentials Plus | Logical access | SSO with MFA for all AWS access |
+| Cyber Essentials Plus | Authorisation | SCIM auto-deprovisions on termination |
 | ISO 27001 A.9.2.1 | User registration | Entra ID + SCIM = single identity source |
 | ISO 27001 A.9.4.2 | Secure log-on procedures | Conditional access: MFA + device compliance |

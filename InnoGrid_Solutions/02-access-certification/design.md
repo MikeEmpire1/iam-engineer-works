@@ -4,7 +4,7 @@
 
 InnoGrid uses a hybrid access certification model:
 
-- **IAM Identity Center-managed users** (Engineering & IT) — reviewed via a custom Python script that generates a review manifest and processes manager decisions from a CSV file
+- **IAM Identity Centre-managed users** (Engineering & IT) — reviewed via a custom Python script that generates a review manifest and processes manager decisions from a CSV file
 - **Entra ID-synced users** (Corporate) — reviewed using **Entra ID Access Reviews** (native capability), with results exported for the unified compliance report
 
 ```
@@ -12,7 +12,7 @@ InnoGrid uses a hybrid access certification model:
 │                     Q3 2026 Access Review Campaign               │
 │                                                                  │
 │   ┌─────────────────────────┐    ┌──────────────────────────┐   │
-│   │  IAM Identity Center    │    │  Entra ID Access Reviews │   │
+│   │  IAM Identity Centre    │    │  Entra ID Access Reviews │   │
 │   │  (Engineering & IT)     │    │  (Corporate users)       │   │
 │   │                         │    │                          │   │
 │   │  Generate review CSV ───┼───►│                          │   │
@@ -24,7 +24,7 @@ InnoGrid uses a hybrid access certification model:
 │                            ▼                                     │
 │               ┌─────────────────────────┐                       │
 │               │  Unified Compliance     │                       │
-│               │  Report (SOC 2 / 27001) │                       │
+│               │  Report (Cyber Essentials / ISO 27001)  │                       │
 │               └─────────────────────────┘                       │
 └──────────────────────────────────────────────────────────────────┘
 ```
@@ -33,7 +33,7 @@ InnoGrid uses a hybrid access certification model:
 
 ```mermaid
 flowchart TD
-    A[CISO opens campaign] --> B[Generate review manifest from IAM Identity Center]
+    A[CISO opens campaign] --> B[Generate review manifest from IAM Identity Centre]
     B --> C[Assign reviewers by manager mapping]
     C --> D[Distribute review packages]
     D --> E[Managers submit decisions via CSV or Entra ID]
@@ -105,15 +105,15 @@ For **corporate users** (HR, Finance, Legal, Exec, Marketing, Ops), the review i
 1. CISO creates an Entra ID Access Review for each corporate manager
 2. Managers review their reports' group memberships in Entra ID
 3. Results auto-apply to Entra ID groups
-4. Since these groups are synced via SCIM to IAM Identity Center, the changes propagate automatically
-5. Entra ID export is merged with the IAM Identity Center review data for the unified compliance report
+4. Since these groups are synced via SCIM to IAM Identity Centre, the changes propagate automatically
+5. Entra ID export is merged with the IAM Identity Centre review data for the unified compliance report
 
 ## Compliance Mapping
 
 | Requirement | Control | How It's Met |
 |---|---|---|
-| SOC 2 CC6.3 | Periodic access review | Quarterly review campaign with documented evidence |
-| SOC 2 CC6.1 | Logical access | Only active employees retain access after certification |
+| Cyber Essentials Plus | Periodic access review | Quarterly review campaign with documented evidence |
+| Cyber Essentials Plus | Logical access | Only active employees retain access after certification |
 | ISO 27001 A.9.2.5 | Review of user access rights | Managers recertify direct reports every 90 days |
 | ISO 27001 A.9.2.6 | Removal of access rights | Auto-revocation of unrecertified access at deadline |
-| SOC 2 CC6.2 | Timely deprovisioning | Leave suspensions applied immediately during review |
+| UK Data Protection Act 2018 | Timely deprovisioning | Leave suspensions applied immediately during review |

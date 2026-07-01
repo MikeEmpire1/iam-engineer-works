@@ -89,12 +89,12 @@ foreach ($key in $newKeys.AccessKeyMetadata) {
 ### Step 3: Terminate Rogue EC2 Instance
 
 ```powershell
-# Terminate the cryptomining instance in eu-central-1
+# Terminate the cryptomining instance in ap-southeast-1
 # Note: The SCP blocked the launch in non-approved regions, but the instance
 # exists. Need to assume a role in the Security account that has cross-region access.
 
 $rogueInstanceId = "i-0abcd1234efgh5678"
-$rogueRegion = "eu-central-1"
+$rogueRegion = "ap-southeast-1"
 
 # First, snapshot the volume for forensics
 $instanceInfo = aws ec2 describe-instances --instance-ids $rogueInstanceId `
@@ -157,10 +157,10 @@ Emergency SCP content:
 ```powershell
 # Rotate the secrets for both compromised service accounts
 aws secretsmanager rotate-secret --secret-id iam/svc-cicd-deploy `
-  --rotation-lambda-arn arn:aws:lambda:us-east-1:111122223333:function:rotate-iam-keys
+  --rotation-lambda-arn arn:aws:lambda:eu-west-2:111122223333:function:rotate-iam-keys
 
 aws secretsmanager rotate-secret --secret-id iam/svc-backup-agent `
-  --rotation-lambda-arn arn:aws:lambda:us-east-1:111122223333:function:rotate-iam-keys
+  --rotation-lambda-arn arn:aws:lambda:eu-west-2:111122223333:function:rotate-iam-keys
 
 Write-Host "SECRETS ROTATED: svc-cicd-deploy, svc-backup-agent"
 ```
@@ -197,7 +197,7 @@ aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,Attribut
 
 ```powershell
 # Get full details of the GuardDuty finding
-$findingId = "arn:aws:guardduty:us-east-1:444455556666:detector/abc123/finding/xyz789"
+$findingId = "arn:aws:guardduty:eu-west-2:444455556666:detector/abc123/finding/xyz789"
 
 aws guardduty get-findings --detector-id abc123 `
   --finding-ids $findingId --profile inno-security-read | ConvertFrom-Json | `
@@ -237,7 +237,7 @@ Write-Host "and extracted the AWS keys from build logs."
 Write-Host ""
 Write-Host "Attack Chain:"
 Write-Host "1. Attacker accessed Jenkins (no MFA) → viewed build config → extracted svc-cicd-deploy keys"
-Write-Host "2. Keys used from Tor exit node to launch GPU instance in unauthorized region"
+Write-Host "2. Keys used from Tor exit node to launch GPU instance in unauthorised region"
 Write-Host "3. Privilege escalation: created new keys for svc-backup-agent"
 Write-Host "4. Data exfiltration: accessed s3://inno-prod-backup-data (~500MB)"
 Write-Host "5. Attempted CreateUser — blocked by SCP"
@@ -245,8 +245,8 @@ Write-Host ""
 Write-Host "Scope:"
 Write-Host "- Users compromised: svc-cicd-deploy, svc-backup-agent"
 Write-Host "- Data exfiltrated: ~500MB from inno-prod-backup-data"
-Write-Host "- Resources created: 1x p3.16xlarge in eu-central-1 (terminated)"
-Write-Host "- IAM Identity Center: NOT affected (incident limited to IAM users)"
+Write-Host "- Resources created: 1x p3.16xlarge in ap-southeast-1 (terminated)"
+Write-Host "- IAM Identity Centre: NOT affected (incident limited to IAM users)"
 ```
 
 ---
@@ -305,10 +305,10 @@ Write-Host "Jenkins admin account credentials rotated"
 }
 ```
 
-### Control Improvement 2: IAM Access Analyzer — Service Key Rotation Alerts
+### Control Improvement 2: IAM Access Analyser — Service Key Rotation Alerts
 
 ```hcl
-# Enable IAM Access Analyzer to alert on keys older than 90 days
+# Enable IAM Access Analyser to alert on keys older than 90 days
 resource "aws_iam_access_analyzer" "this" {
   analyzer_name = "iam-key-analyzer"
   type          = "ACCOUNT"
@@ -442,7 +442,7 @@ resource "aws_cloudwatch_event_target" "auto_contain" {
   "Resource": "arn:aws:ec2:*:*:instance/*",
   "Condition": {
     "StringNotEquals": {
-      "aws:RequestedRegion": ["us-east-1", "us-west-2", "eu-west-1"]
+      "aws:RequestedRegion": ["eu-west-2", "eu-west-1"]
     }
   }
 }
@@ -456,10 +456,10 @@ resource "aws_cloudwatch_event_target" "auto_contain" {
 Write-Host "=== POST-INCIDENT REPORT: IAM-SEC-2026-042 ==="
 Write-Host ""
 Write-Host "Incident Summary: Compromised CI/CD service account led to privilege escalation,"
-Write-Host "unauthorized EC2 launch (cryptomining), and S3 data exfiltration."
+Write-Host "unauthorised EC2 launch (cryptomining), and S3 data exfiltration."
 Write-Host ""
 Write-Host "Timeline:"
-Write-Host "  14:28  - Attacker launches GPU instance in eu-central-1"
+Write-Host "  14:28  - Attacker launches GPU instance in ap-southeast-1"
 Write-Host "  14:29  - Attacker escalates: creates keys for svc-backup-agent"
 Write-Host "  14:30  - Attacker exfiltrates data from inno-prod-backup-data"
 Write-Host "  14:31  - Attacker attempts CreateUser (DENIED by SCP)"
@@ -481,7 +481,7 @@ Write-Host "  - Downtime: None (service accounts are non-interactive)"
 Write-Host ""
 Write-Host "Improvements Implemented:"
 Write-Host "  1. SCP: Block crypto instance types (p*, g*, inf*, f*)"
-Write-Host "  2. IAM Access Analyzer: Alert on keys > 90 days"
+Write-Host "  2. IAM Access Analyser: Alert on keys > 90 days"
 Write-Host "  3. GuardDuty: Custom threat list for Tor exit nodes"
 Write-Host "  4. Lambda: Auto-contain credential exfiltration findings"
 Write-Host "  5. EventBridge: Automated response rule"
@@ -508,13 +508,13 @@ Write-Host "=== END OF REPORT ==="
 
 ### Terminate EC2 Instance
 
-1. **AWS Console** → Switch to the region `eu-central-1`
+1. **AWS Console** → Switch to the region `ap-southeast-1`
 2. **EC2** → Instances → Select `i-0abcd1234efgh5678`
 3. **Instance state** → **Terminate**
 
 ### Attach Emergency SCP
 
-1. **AWS Console** → AWS Organizations → Policies → **SCP**
+1. **AWS Console** → AWS Organisations → Policies → **SCP**
 2. Click **EmergencyContain**
 3. **Attach** → Select Nonproduction account
 

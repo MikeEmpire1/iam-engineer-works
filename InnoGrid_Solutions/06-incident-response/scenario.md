@@ -4,7 +4,7 @@
 
 InnoGrid's SOC (Tanya Brooks, Jake Hoffman, Olivia Reed) monitors AWS security 24/7 using GuardDuty, Security Hub, and CloudTrail. The IAM team (Ryan Mitchell, Aisha Patel, Miguel Torres) handles IAM-specific escalations.
 
-The incident response plan follows the **NIST 800-61** framework:
+The incident response plan follows the **NCSC Cyber Assessment Framework (CAF)**:
 
 1. **Preparation** — Runbooks, tools, and training in place
 2. **Detection & Analysis** — Identify and validate the incident
@@ -23,7 +23,7 @@ The SOC receives a **GuardDuty finding**:
 
 **Details**:
 - **User**: `svc-cicd-deploy` (IAM user in Nonproduction account)
-- **Action**: `RunInstances` in `eu-central-1` (Frankfurt) — a region NOT in InnoGrid's allowed regions list (SCP restricts to us-east-1, us-west-2, eu-west-1)
+- **Action**: `RunInstances` in `ap-southeast-1` (Singapore) — a region NOT in InnoGrid's allowed regions list (SCP restricts to eu-west-2, eu-west-1)
 - **IP**: `185.220.101.x` (Tor exit node)
 - **Resource**: EC2 instance `i-0abcd1234efgh5678` launched at 14:28 UTC
 - **Instance type**: `p3.16xlarge` (GPU instance — not in allowed types list)
@@ -32,7 +32,7 @@ The SOC receives a **GuardDuty finding**:
 
 | Time | Finding | Severity |
 |---|---|---|
-| 14:28 UTC | Instance `i-0abcd1234efgh5678` launched in eu-central-1 by `svc-cicd-deploy` | MEDIUM |
+| 14:28 UTC | Instance `i-0abcd1234efgh5678` launched in ap-southeast-1 by `svc-cicd-deploy` | MEDIUM |
 | 14:29 UTC | `svc-cicd-deploy` called `iam:CreateAccessKey` for user `svc-backup-agent` | HIGH |
 | 14:30 UTC | Newly created key used to call `s3:ListBuckets` and `s3:GetObject` on `inno-prod-backup-data` | MEDIUM |
 | 14:31 UTC | `svc-cicd-deploy` attempted `iam:CreateUser` — **denied** by SCP | LOW |
@@ -45,8 +45,8 @@ The SOC receives a **GuardDuty finding**:
 | `svc-cicd-deploy` IAM user | **Compromised** | Access keys exfiltrated to attacker |
 | `svc-backup-agent` IAM user | **Privilege escalation** | New keys created by attacker |
 | `inno-prod-backup-data` S3 bucket | **Data exfiltration** | ~500MB of backup data downloaded |
-| EC2 GPU instance | **Cryptomining** | `p3.16xlarge` launched in unauthorized region |
-| IAM Identity Center | **Unaffected** | Incident limited to IAM users, not Identity Center |
+| EC2 GPU instance | **Cryptomining** | `p3.16xlarge` launched in unauthorised region |
+| IAM Identity Centre | **Unaffected** | Incident limited to IAM users, not Identity Centre |
 
 ## Response Objectives
 

@@ -6,7 +6,7 @@
 
 ## Scenario
 
-Corporate users (HR, Finance, Legal, Exec) are manually duplicated across Entra ID and IAM Identity Center. The project configures Entra ID as an external IdP with SAML federation and SCIM provisioning, enabling automatic user sync and SSO via the Entra ID My Apps portal.
+Corporate users (HR, Finance, Legal, Exec) are manually duplicated across Entra ID and IAM Identity Centre. The project configures Entra ID as an external IdP with SAML federation and SCIM provisioning, enabling automatic user sync and SSO via the Entra ID My Apps portal.
 
 ## Key Files
 
@@ -21,4 +21,4 @@ Corporate users (HR, Finance, Legal, Exec) are manually duplicated across Entra 
 - Entra ID configured as external IdP with SAML 2.0 federation
 - SCIM provisioning enabled — users/groups sync automatically within ~40 minutes
 - 3 conditional access policies enforced (MFA, block legacy auth, device compliance)
-- Engineering users unaffected — direct IAM Identity Center auth preserved as fallback
+- Engineering users unaffected — direct IAM Identity Centre auth preserved as fallback
