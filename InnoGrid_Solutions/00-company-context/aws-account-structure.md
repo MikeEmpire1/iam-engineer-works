@@ -65,7 +65,7 @@ InnoGrid enforces two layers of SCP guardrails: **global** (applied to all accou
 2. **Region restriction** — Only `eu-west-2`, `eu-west-1` allowed (compliance regions)
 3. **No unapproved instance types** — Only `t3.*`, `m5.*`, `c5.*`, `r5.*` families allowed
 4. **Require encryption** — EBS volumes, S3 buckets, and RDS instances must be encrypted
-5. **No public S3 buckets** — `s3:PutBucketPublicAccessBlock` enforced
+5. **No public S3 buckets** — Public ACLs blocked by SCP; primary enforcement via Organization-level S3 Block Public Access
 6. **JIT for production** — No standing `AdministratorAccess` in production account
 
 #### OU-Specific Service Boundary SCPs

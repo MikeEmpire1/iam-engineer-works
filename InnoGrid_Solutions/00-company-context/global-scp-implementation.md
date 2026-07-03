@@ -21,7 +21,7 @@ These policies enforce baseline governance controls — root user lockdown, regi
 | 2 | `Deny-NonCompliantRegions` | Root | Region allow-list | Only `eu-west-2`, `eu-west-1` permitted; global services exempted |
 | 3 | `Deny-UnapprovedInstanceTypes` | Root | Instance type allow-list | Only `t3.*`, `m5.*`, `c5.*`, `r5.*` families permitted |
 | 4 | `Require-Encryption` | Root | Enforce encryption at create time | Deny unencrypted EBS volumes and RDS instances |
-| 5 | `Deny-PublicS3Buckets` | Root | Block public S3 configurations | Deny public ACLs, public bucket policies, removal of public access blocks |
+| 5 | `Deny-PublicS3Buckets` | Root | Block public access | Deny public ACLs on S3 buckets and objects |
 
 ---
 
@@ -219,7 +219,7 @@ These policies enforce baseline governance controls — root user lockdown, regi
 
 ### SCP 5 — Deny-PublicS3Buckets
 
-**Purpose:** Prevent any S3 bucket or object from being made publicly accessible. This covers ACL-based access (`public-read`, `public-read-write`) and bucket policies that grant public access.
+**Purpose:** Prevent S3 buckets and objects from being made publicly accessible via ACLs. The primary public access control is enforced through Organization-level S3 Block Public Access (see below).
 
 **Policy JSON:**
 
@@ -240,23 +240,54 @@ These policies enforce baseline governance controls — root user lockdown, regi
           "s3:x-amz-acl": ["public-read", "public-read-write"]
         }
       }
-    },
-    {
-      "Sid": "DenyPublicBucketPolicy",
-      "Effect": "Deny",
-      "Action": "s3:PutBucketPolicy",
-      "Resource": "arn:aws:s3:*:*:*",
-      "Condition": {
-        "StringEquals": {
-          "s3:PublicAccessBlockConfiguration.RestrictPublicBuckets": "false"
-        }
-      }
     }
   ]
 }
 ```
 
-**Note:** This SCP works alongside the AWS account-level S3 Public Access Block setting. Together they provide defence in depth — the account setting blocks public access at the account level, while this SCP prevents any IAM principal from explicitly granting public access via ACLs or bucket policies.
+**Note:** This SCP only blocks public ACLs. The primary enforcement mechanism is the **Organization-level S3 Block Public Access** policy (see next section), which applies all four PublicAccessBlock settings (`BlockPublicAcls`, `IgnorePublicAcls`, `BlockPublicPolicy`, `RestrictPublicBuckets`) across every account and cannot be overridden by account administrators.
+
+---
+
+### Organization-Level S3 Block Public Access (Primary Control)
+
+**Purpose:** Enforce S3 Block Public Access settings across all accounts in the organization. This is a separate AWS Organizations policy type (not an SCP) that applies at the Root and overrides account-level and bucket-level settings.
+
+**Configuration — AWS Console:**
+
+1. Navigate to **AWS Organizations** → **Policies**
+2. Select the **S3 Block Public Access** tab
+3. Click **Create policy**
+4. Set all four settings to `true`:
+   - `BlockPublicAcls`: `true`
+   - `IgnorePublicAcls`: `true`
+   - `BlockPublicPolicy`: `true`
+   - `RestrictPublicBuckets`: `true`
+5. **Create policy** and attach it to the Root
+
+**Configuration — AWS CLI:**
+
+```powershell
+# Get the management account ID
+$MGMT_ACCOUNT = aws organizations describe-organization --query "Organization.MasterAccountId" --output text
+
+# Enable all four Block Public Access settings at the organization level
+aws s3control put-public-access-block --account-id $MGMT_ACCOUNT --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+```
+
+**Verification:**
+
+```powershell
+# Confirm the settings are in effect
+aws s3control get-public-access-block --account-id $MGMT_ACCOUNT
+```
+
+**How it works:** When an Organization-level S3 Block Public Access policy is applied, AWS automatically rejects:
+- `PutBucketAcl` and `PutObjectAcl` calls with public ACLs (blocked by `BlockPublicAcls`)
+- `PutBucketPolicy` calls that would grant public access (blocked by `BlockPublicPolicy`)
+- Any attempt to disable or weaken the settings at the account or bucket level
+
+This renders the SCP's `DenyPublicBucketPolicy` statement redundant, which is why it has been removed. The SCP retains only the ACL block as additional defence-in-depth.
 
 ---
 
@@ -378,7 +409,7 @@ resource "aws_organizations_policy_attachment" "require_encryption_attachment" {
 # ──────────────────────────────────────────────
 resource "aws_organizations_policy" "deny_public_s3" {
   name        = "Deny-PublicS3Buckets"
-  description = "Block public ACLs and bucket policies across all S3 buckets"
+  description = "Block public ACLs on S3 buckets and objects"
   type        = "SERVICE_CONTROL_POLICY"
   content     = file("${path.module}/policies/deny-public-s3-buckets.json")
 }
@@ -513,7 +544,7 @@ $Policy4 = aws organizations create-policy `
 # Create Deny-PublicS3Buckets
 $Policy5 = aws organizations create-policy `
   --name "Deny-PublicS3Buckets" `
-  --description "Block public ACLs and bucket policies across all S3 buckets" `
+  --description "Block public ACLs on S3 buckets and objects" `
   --type SERVICE_CONTROL_POLICY `
   --content (Get-Content -Raw .\deny-public-s3-buckets.json) `
   --query "Policy.PolicySummary.Id" --output text
@@ -649,10 +680,14 @@ aws ec2 run-instances --image-id ami-0abcdef1234567890 --instance-type t3.micro 
 aws s3api put-bucket-acl --bucket test-block-public --acl public-read
 # Expected: Access denied by SCP
 
-# Try to disable public access block on a bucket
-aws s3api put-public-access-block --bucket test-block-public `
+# Verify organisation-level Block Public Access denies public bucket policies
+aws s3api put-bucket-policy --bucket test-block-public --policy "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::test-block-public/*\"}]}"
+# Expected: Access denied by organisation policy
+
+# Verify organisation-level Block Public Access prevents disabling the settings
+aws s3control put-public-access-block --account-id $MGMT_ACCOUNT `
   --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
-# Expected: Access denied by SCP
+# Expected: Access denied by organisation policy
 ```
 
 ### Decode a Denied Request
@@ -724,7 +759,7 @@ ORDER BY eventtime DESC;
 | Workloads run only in UK compliance regions | `Deny-NonCompliantRegions` | API calls to `us-east-1`, `ap-southeast-2`, etc. return `AccessDenied` with `FailedDueToSCP` |
 | Only approved instance families are used | `Deny-UnapprovedInstanceTypes` | EC2 `RunInstances` with `g4dn.*`, `p4d.*`, etc. are denied |
 | Data at rest is encrypted | `Require-Encryption` | Unencrypted EBS volumes and RDS instances cannot be created |
-| S3 buckets are not publicly accessible | `Deny-PublicS3Buckets` | Public ACLs, public bucket policies, and disabling public access blocks are denied |
+| S3 buckets are not publicly accessible | `Deny-PublicS3Buckets` + Organization-level S3 Block Public Access | Public ACLs are denied by SCP; public bucket policies and public access block settings are enforced via Organization-level S3 Block Public Access |
 
 ---
 
