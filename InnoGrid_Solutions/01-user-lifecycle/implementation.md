@@ -102,19 +102,22 @@ resource "aws_ssoadmin_account_assignment" "dev_access_engineering" {
 
 ### 1.3 Verification (AWS CLI)
 
-```powershell
+```bash
+IDENTITY_STORE_ID="d-9a7b8c6d5e"
+INSTANCE_ARN="arn:aws:sso:::instance/ssoins-1234567890abcdef"
+
 # Verify user exists in IAM Identity Centre
-aws identitystore list-users --identity-store-id d-9a7b8c6d5e `
-  --filter AttributePath=UserName,AttributeValue=daniel.park@innogrid.com
+aws identitystore list-users --identity-store-id "$IDENTITY_STORE_ID" \
+  --filter "AttributePath=UserName,AttributeValue=daniel.park@innogrid.com"
 
 # Verify group memberships
-aws identitystore list-group-memberships --identity-store-id d-9a7b8c6d5e `
-  --member-id UserId="<daniel-park-user-id>"
+aws identitystore list-group-memberships --identity-store-id "$IDENTITY_STORE_ID" \
+  --member-id "UserId=<daniel-park-user-id>"
 
 # Check permission set assignment
-aws sso-admin list-account-assignments --instance-arn "arn:aws:sso:::instance/ssoins-1234567890abcdef" `
-  --account-id 123456789012 `
-  --principal-type GROUP `
+aws sso-admin list-account-assignments --instance-arn "$INSTANCE_ARN" \
+  --account-id 123456789012 \
+  --principal-type GROUP \
   --principal-id "<engineering-group-id>"
 ```
 
@@ -170,31 +173,33 @@ resource "aws_identitystore_group_membership" "maya_johnson_platform_engineers" 
 
 ### 2.2 AWS CLI: Remove and Add Group Membership
 
-```powershell
+```bash
+IDENTITY_STORE_ID="d-9a7b8c6d5e"
+
 # Step 1: List Maya's current group memberships
-aws identitystore list-group-memberships --identity-store-id d-9a7b8c6d5e `
-  --member-id UserId="<maya-johnson-user-id>"
+aws identitystore list-group-memberships --identity-store-id "$IDENTITY_STORE_ID" \
+  --member-id "UserId=<maya-johnson-user-id>"
 
 # Step 2: Remove from app-dev group
-aws identitystore delete-group-membership --identity-store-id d-9a7b8c6d5e `
+aws identitystore delete-group-membership --identity-store-id "$IDENTITY_STORE_ID" \
   --membership-id "<app-dev-membership-id>"
 
 # Step 3: Add to platform-engineers group
-$groupId = (aws identitystore list-groups --identity-store-id d-9a7b8c6d5e `
-  --filter AttributePath=DisplayName,AttributeValue=platform-engineers `
+GROUP_ID=$(aws identitystore list-groups --identity-store-id "$IDENTITY_STORE_ID" \
+  --filter "AttributePath=DisplayName,AttributeValue=platform-engineers" \
   --query "Groups[0].GroupId" --output text)
 
-$userId = (aws identitystore list-users --identity-store-id d-9a7b8c6d5e `
-  --filter AttributePath=UserName,AttributeValue=maya.johnson@innogrid.com `
+USER_ID=$(aws identitystore list-users --identity-store-id "$IDENTITY_STORE_ID" \
+  --filter "AttributePath=UserName,AttributeValue=maya.johnson@innogrid.com" \
   --query "Users[0].UserId" --output text)
 
-aws identitystore create-group-membership --identity-store-id d-9a7b8c6d5e `
-  --group-id $groupId --member-id $userId
+aws identitystore create-group-membership --identity-store-id "$IDENTITY_STORE_ID" \
+  --group-id "$GROUP_ID" --member-id "$USER_ID"
 
 # Step 4: Update manager attribute (if using custom attributes)
 # Note: IAM Identity Centre does not natively support "manager" as a default attribute.
 # This would be tracked in the IAM ticket metadata.
-Write-Host "Manager updated: Derek Jones -> Priya Sharma (tracked in IAM-2026-043)"
+echo "Manager updated: Derek Jones -> Priya Sharma (tracked in IAM-2026-043)"
 ```
 
 ### 2.3 Console Workflow (Manual Alternative)
@@ -207,12 +212,14 @@ Write-Host "Manager updated: Derek Jones -> Priya Sharma (tracked in IAM-2026-04
 
 ### 2.4 Verification
 
-```powershell
+```bash
+IDENTITY_STORE_ID="d-9a7b8c6d5e"
+
 # Confirm Maya is no longer in app-dev
-aws identitystore list-group-memberships --identity-store-id d-9a7b8c6d5e --group-id "<app-dev-group-id>"
+aws identitystore list-group-memberships --identity-store-id "$IDENTITY_STORE_ID" --group-id "<app-dev-group-id>"
 
 # Confirm Maya is now in platform-engineers
-aws identitystore list-group-memberships --identity-store-id d-9a7b8c6d5e --group-id "$groupId"
+aws identitystore list-group-memberships --identity-store-id "$IDENTITY_STORE_ID" --group-id "$GROUP_ID"
 ```
 
 ---
@@ -221,34 +228,30 @@ aws identitystore list-group-memberships --identity-store-id d-9a7b8c6d5e --grou
 
 ### 3.1 Immediate Actions (AWS CLI)
 
-```powershell
-# Variables
-$identityStoreId = "d-9a7b8c6d5e"
-$instanceArn = "arn:aws:sso:::instance/ssoins-1234567890abcdef"
-$hrTicket = "HR-2026-069"
-$iamTicket = "IAM-2026-044"
-$timestamp = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+```bash
+IDENTITY_STORE_ID="d-9a7b8c6d5e"
+INSTANCE_ARN="arn:aws:sso:::instance/ssoins-1234567890abcdef"
+HR_TICKET="HR-2026-069"
+IAM_TICKET="IAM-2026-044"
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Get Kevin's user ID
-$kevinUserId = aws identitystore list-users --identity-store-id $identityStoreId `
-  --filter AttributePath=UserName,AttributeValue=kevin.nguyen@innogrid.com `
-  --query "Users[0].UserId" --output text
+KEVIN_USER_ID=$(aws identitystore list-users --identity-store-id "$IDENTITY_STORE_ID" \
+  --filter "AttributePath=UserName,AttributeValue=kevin.nguyen@innogrid.com" \
+  --query "Users[0].UserId" --output text)
 
-Write-Host "[$timestamp] [$iamTicket] Processing leaver: Kevin Nguyen ($kevinUserId)"
+echo "[$TIMESTAMP] [$IAM_TICKET] Processing leaver: Kevin Nguyen ($KEVIN_USER_ID)"
 
 # Step 1: List all current group memberships
-$memberships = aws identitystore list-group-memberships --identity-store-id $identityStoreId `
-  --member-id UserId=$kevinUserId --query "GroupMemberships" --output json
+MEMBERSHIPS=$(aws identitystore list-group-memberships --identity-store-id "$IDENTITY_STORE_ID" \
+  --member-id "UserId=$KEVIN_USER_ID" --query "GroupMemberships" --output json)
 
-Write-Host "Found $($memberships.Count) group memberships to remove."
-
-# Step 2: Remove all group memberships
-foreach ($membership in ($memberships | ConvertFrom-Json)) {
-  aws identitystore delete-group-membership --identity-store-id $identityStoreId `
-    --membership-id $membership.MembershipId
-
-  Write-Host "Removed membership: $($membership.MembershipId)"
-}
+echo "$MEMBERSHIPS" | jq -c '.[]' | while read -r MEMBERSHIP; do
+  MEMBERSHIP_ID=$(echo "$MEMBERSHIP" | jq -r '.MembershipId')
+  aws identitystore delete-group-membership --identity-store-id "$IDENTITY_STORE_ID" \
+    --membership-id "$MEMBERSHIP_ID"
+  echo "Removed membership: $MEMBERSHIP_ID"
+done
 
 # Step 3: Deactivate the user
 # Note: IAM Identity Centre doesn't directly support user deactivation via API.
@@ -258,20 +261,21 @@ foreach ($membership in ($memberships | ConvertFrom-Json)) {
 # Using the Console for this step (see 3.2).
 
 # Step 4: Log the action
-$auditLog = @"
+AUDIT_LOG=$(cat <<EOF
 {
   "eventType": "LEAVER",
   "user": "kevin.nguyen@innogrid.com",
-  "userId": "$kevinUserId",
-  "hrTicket": "$hrTicket",
-  "iamTicket": "$iamTicket",
+  "userId": "$KEVIN_USER_ID",
+  "hrTicket": "$HR_TICKET",
+  "iamTicket": "$IAM_TICKET",
   "performedBy": "aisha.patel@innogrid.com",
-  "timestamp": "$timestamp",
+  "timestamp": "$TIMESTAMP",
   "action": "All group memberships removed; user deactivated in IAM Identity Centre"
 }
-"@
+EOF
+)
 
-Write-Host $auditLog
+echo "$AUDIT_LOG"
 # In production, this would be written to S3, CloudWatch, or the ticket system
 ```
 
@@ -284,9 +288,9 @@ Write-Host $auditLog
 
 ### 3.3 Revoke Active Sessions (AWS CLI)
 
-```powershell
+```bash
 # List active sessions for Kevin
-aws sso-admin list-account-assignments --instance-arn $instanceArn `
+aws sso-admin list-account-assignments --instance-arn "$INSTANCE_ARN" \
   --account-id 111111111111 --query "AccountAssignments"  # Security account
 
 # IAM Identity Centre sessions expire based on the session duration.
@@ -296,31 +300,31 @@ aws sso-admin list-account-assignments --instance-arn $instanceArn `
 # 3. The user portal session cache respects the identity store status.
 
 # Verify no active permission set assignments remain
-aws identitystore list-group-memberships --identity-store-id $identityStoreId `
-  --member-id UserId=$kevinUserId
+aws identitystore list-group-memberships --identity-store-id "$IDENTITY_STORE_ID" \
+  --member-id "UserId=$KEVIN_USER_ID"
 # Expected result: empty list
 ```
 
 ### 3.4 Verification
 
-```powershell
+```bash
 # Attempt to describe the user (should confirm DISABLED status)
-aws identitystore describe-user --identity-store-id $identityStoreId --user-id $kevinUserId
+aws identitystore describe-user --identity-store-id "$IDENTITY_STORE_ID" --user-id "$KEVIN_USER_ID"
 
 # Confirm zero group memberships
-$remainingGroups = aws identitystore list-group-memberships --identity-store-id $identityStoreId `
-  --member-id UserId=$kevinUserId --query "length(GroupMemberships)"
-Write-Host "Remaining group memberships: $remainingGroups"
+REMAINING_GROUPS=$(aws identitystore list-group-memberships --identity-store-id "$IDENTITY_STORE_ID" \
+  --member-id "UserId=$KEVIN_USER_ID" --query "length(GroupMemberships)")
+echo "Remaining group memberships: $REMAINING_GROUPS"
 # Expected: 0
 
 # Send notification to CISO and SOC
-Write-Host "=== TERMINATION COMPLETE ==="
-Write-Host "User: Kevin Nguyen (kevin.nguyen@innogrid.com)"
-Write-Host "IAM Ticket: $iamTicket"
-Write-Host "HR Ticket: $hrTicket"
-Write-Host "Timestamp: $timestamp"
-Write-Host "Notified: sarah.chen@innogrid.com, tanya.brooks@innogrid.com"
-Write-Host "=============================="
+echo "=== TERMINATION COMPLETE ==="
+echo "User: Kevin Nguyen (kevin.nguyen@innogrid.com)"
+echo "IAM Ticket: $IAM_TICKET"
+echo "HR Ticket: $HR_TICKET"
+echo "Timestamp: $TIMESTAMP"
+echo "Notified: sarah.chen@innogrid.com, tanya.brooks@innogrid.com"
+echo "=============================="
 ```
 
 ### 3.5 Console Workflow for Verification
@@ -337,107 +341,108 @@ Write-Host "=============================="
 
 The following PowerShell script orchestrates all three lifecycle events with a single invocation and logs to a local audit file. In production this would be triggered by an HR system webhook or Jira automation.
 
-```powershell
-# scripts/process-lifecycle-events.ps1
+```bash
+#!/bin/bash
+# scripts/process-lifecycle-events.sh
 # Orchestrates joiner/mover/leaver events
+# Usage: ./process-lifecycle-events.sh JOINER user@email.com HR-001 IAM-001 "NewGroup" "OldGroup" "Manager"
 
-param(
-  [string]$EventType,       # JOINER, MOVER, LEAVER
-  [string]$UserEmail,
-  [string]$HrTicket,
-  [string]$IamTicket,
-  [string]$NewGroup,        # Used for MOVER
-  [string]$OldGroup,        # Used for MOVER
-  [string]$Manager          # Used for JOINER or MOVER
-)
+EVENT_TYPE="$1"
+USER_EMAIL="$2"
+HR_TICKET="$3"
+IAM_TICKET="$4"
+NEW_GROUP="${5:-}"
+OLD_GROUP="${6:-}"
+MANAGER="${7:-}"
 
-$IdentityStoreId = "d-9a7b8c6d5e"
-$AuditLogFile = "C:\IAM\lifecycle-audit.log"
-$Timestamp = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+IDENTITY_STORE_ID="d-9a7b8c6d5e"
+AUDIT_LOG_FILE="/var/log/iam/lifecycle-audit.log"
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-function Write-AuditLog {
-  param($Message)
-  $entry = "[$Timestamp] $Message"
-  Add-Content -Path $AuditLogFile -Value $entry
-  Write-Host $entry
+write_audit_log() {
+  local MESSAGE="$1"
+  local ENTRY="[$TIMESTAMP] $MESSAGE"
+  echo "$ENTRY" >> "$AUDIT_LOG_FILE"
+  echo "$ENTRY"
 }
 
-switch ($EventType) {
-  "JOINER" {
-    Write-AuditLog "PROCESSING JOINER: $UserEmail (Ticket: $HrTicket / $IamTicket)"
+case "$EVENT_TYPE" in
+  JOINER)
+    write_audit_log "PROCESSING JOINER: $USER_EMAIL (Ticket: $HR_TICKET / $IAM_TICKET)"
 
     # Create user via Terraform
-    Set-Location "C:\terraform\identity-centre"
-    terraform apply -auto-approve `
-      -target="aws_identitystore_user.$($UserEmail.Replace('@','_').Replace('.','_'))"
+    cd terraform/identity-centre
+    terraform apply -auto-approve \
+      -target="aws_identitystore_user.${USER_EMAIL//[@.]/_}"
 
-    Write-AuditLog "JOINER COMPLETE: $UserEmail. Manager: $Manager. Groups: engineering, $NewGroup"
-  }
+    write_audit_log "JOINER COMPLETE: $USER_EMAIL. Manager: $MANAGER. Groups: engineering, $NEW_GROUP"
+    ;;
 
-  "MOVER" {
-    Write-AuditLog "PROCESSING MOVER: $UserEmail (Ticket: $HrTicket / $IamTicket)"
+  MOVER)
+    write_audit_log "PROCESSING MOVER: $USER_EMAIL (Ticket: $HR_TICKET / $IAM_TICKET)"
 
     # Fetch user ID
-    $userId = aws identitystore list-users --identity-store-id $IdentityStoreId `
-      --filter AttributePath=UserName,AttributeValue=$UserEmail `
-      --query "Users[0].UserId" --output text
+    USER_ID=$(aws identitystore list-users --identity-store-id "$IDENTITY_STORE_ID" \
+      --filter "AttributePath=UserName,AttributeValue=$USER_EMAIL" \
+      --query "Users[0].UserId" --output text)
 
     # Remove from old group
-    $oldGroupMembershipId = aws identitystore list-group-memberships --identity-store-id $IdentityStoreId `
-      --member-id UserId=$userId --query "GroupMemberships[?GroupId=='$OldGroup'].MembershipId" --output text
-    if ($oldGroupMembershipId) {
-      aws identitystore delete-group-membership --identity-store-id $IdentityStoreId `
-        --membership-id $oldGroupMembershipId
-    }
+    OLD_GROUP_MEMBERSHIP_ID=$(aws identitystore list-group-memberships --identity-store-id "$IDENTITY_STORE_ID" \
+      --member-id "UserId=$USER_ID" \
+      --query "GroupMemberships[?GroupId=='$OLD_GROUP'].MembershipId" --output text)
+    if [ -n "$OLD_GROUP_MEMBERSHIP_ID" ]; then
+      aws identitystore delete-group-membership --identity-store-id "$IDENTITY_STORE_ID" \
+        --membership-id "$OLD_GROUP_MEMBERSHIP_ID"
+    fi
 
     # Add to new group
-    $newGroupId = aws identitystore list-groups --identity-store-id $IdentityStoreId `
-      --filter AttributePath=DisplayName,AttributeValue=$NewGroup `
-      --query "Groups[0].GroupId" --output text
-    aws identitystore create-group-membership --identity-store-id $IdentityStoreId `
-      --group-id $newGroupId --member-id $userId
+    NEW_GROUP_ID=$(aws identitystore list-groups --identity-store-id "$IDENTITY_STORE_ID" \
+      --filter "AttributePath=DisplayName,AttributeValue=$NEW_GROUP" \
+      --query "Groups[0].GroupId" --output text)
+    aws identitystore create-group-membership --identity-store-id "$IDENTITY_STORE_ID" \
+      --group-id "$NEW_GROUP_ID" --member-id "$USER_ID"
 
-    Write-AuditLog "MOVER COMPLETE: $UserEmail. Removed from: $OldGroup. Added to: $NewGroup. Manager: $Manager"
-  }
+    write_audit_log "MOVER COMPLETE: $USER_EMAIL. Removed from: $OLD_GROUP. Added to: $NEW_GROUP. Manager: $MANAGER"
+    ;;
 
-  "LEAVER" {
-    Write-AuditLog "PROCESSING LEAVER: $UserEmail (Ticket: $HrTicket / $IamTicket)"
+  LEAVER)
+    write_audit_log "PROCESSING LEAVER: $USER_EMAIL (Ticket: $HR_TICKET / $IAM_TICKET)"
 
-    $userId = aws identitystore list-users --identity-store-id $IdentityStoreId `
-      --filter AttributePath=UserName,AttributeValue=$UserEmail `
-      --query "Users[0].UserId" --output text
+    USER_ID=$(aws identitystore list-users --identity-store-id "$IDENTITY_STORE_ID" \
+      --filter "AttributePath=UserName,AttributeValue=$USER_EMAIL" \
+      --query "Users[0].UserId" --output text)
 
     # Remove all group memberships
-    $memberships = aws identitystore list-group-memberships --identity-store-id $IdentityStoreId `
-      --member-id UserId=$userId --query "GroupMemberships" --output json | ConvertFrom-Json
-    foreach ($m in $memberships) {
-      aws identitystore delete-group-membership --identity-store-id $IdentityStoreId `
-        --membership-id $m.MembershipId
-    }
+    MEMBERSHIPS=$(aws identitystore list-group-memberships --identity-store-id "$IDENTITY_STORE_ID" \
+      --member-id "UserId=$USER_ID" --query "GroupMemberships" --output json)
+
+    echo "$MEMBERSHIPS" | jq -c '.[]' | while read -r M; do
+      MEMBERSHIP_ID=$(echo "$M" | jq -r '.MembershipId')
+      aws identitystore delete-group-membership --identity-store-id "$IDENTITY_STORE_ID" \
+        --membership-id "$MEMBERSHIP_ID"
+    done
 
     # Note: User deactivation must be done via Console (no API for status change)
-    Write-AuditLog "LEAVER ACTIONS COMPLETE: $UserEmail. Groups removed. User must be disabled via Console."
-    Write-AuditLog "NOTIFY: sarah.chen@innogrid.com, tanya.brooks@innogrid.com"
-  }
-}
+    write_audit_log "LEAVER ACTIONS COMPLETE: $USER_EMAIL. Groups removed. User must be disabled via Console."
+    write_audit_log "NOTIFY: sarah.chen@innogrid.com, tanya.brooks@innogrid.com"
+    ;;
+esac
 ```
 
 ### Usage Examples
 
-```powershell
+```bash
 # Joiner
-.\process-lifecycle-events.ps1 -EventType JOINER -UserEmail "daniel.park@innogrid.com" `
-  -HrTicket "HR-2026-071" -IamTicket "IAM-2026-042" -NewGroup "platform-engineers" `
-  -Manager "Priya Sharma"
+./process-lifecycle-events.sh JOINER "daniel.park@innogrid.com" \
+  "HR-2026-071" "IAM-2026-042" "platform-engineers" "" "Priya Sharma"
 
 # Mover
-.\process-lifecycle-events.ps1 -EventType MOVER -UserEmail "maya.johnson@innogrid.com" `
-  -HrTicket "HR-2026-072" -IamTicket "IAM-2026-043" -OldGroup "app-dev" `
-  -NewGroup "platform-engineers" -Manager "Priya Sharma"
+./process-lifecycle-events.sh MOVER "maya.johnson@innogrid.com" \
+  "HR-2026-072" "IAM-2026-043" "platform-engineers" "app-dev" "Priya Sharma"
 
 # Leaver
-.\process-lifecycle-events.ps1 -EventType LEAVER -UserEmail "kevin.nguyen@innogrid.com" `
-  -HrTicket "HR-2026-069" -IamTicket "IAM-2026-044"
+./process-lifecycle-events.sh LEAVER "kevin.nguyen@innogrid.com" \
+  "HR-2026-069" "IAM-2026-044"
 ```
 
 ---
@@ -474,26 +479,29 @@ ORDER BY eventtime;
 
 ### HR Reconciliation (Post-Processing)
 
-```powershell
-# scripts/hr-reconciliation.ps1
+```bash
+#!/bin/bash
+# scripts/hr-reconciliation.sh
 # Weekly reconciliation between HR roster and IAM Identity Centre
 
-$identityStoreId = "d-9a7b8c6d5e"
-$iamUsers = aws identitystore list-users --identity-store-id $identityStoreId `
-  --query "Users[*].[UserId,UserName]" --output json | ConvertFrom-Json
+IDENTITY_STORE_ID="d-9a7b8c6d5e"
 
-$hrRoster = Import-Csv "C:\HR\active-employees.csv"
+IAM_USERS=$(aws identitystore list-users --identity-store-id "$IDENTITY_STORE_ID" \
+  --query "Users[*].[UserId,UserName]" --output json)
 
-Write-Host "=== HR RECONCILIATION REPORT ==="
-foreach ($iamUser in $iamUsers) {
-  $email = $iamUser[1]
-  $match = $hrRoster | Where-Object { $_.Email -eq $email }
-  if (-not $match) {
-    Write-Host "WARNING: $email exists in IAM Identity Centre but not in HR roster"
-  }
-}
+echo "=== HR RECONCILIATION REPORT ==="
 
-Write-Host "=== DONE ==="
+echo "$IAM_USERS" | jq -c '.[]' | while read -r USER; do
+  USER_ID=$(echo "$USER" | jq -r '.[0]')
+  EMAIL=$(echo "$USER" | jq -r '.[1]')
+
+  # Check if email exists in HR roster CSV
+  if ! grep -qi "$EMAIL" /var/iam/active-employees.csv 2>/dev/null; then
+    echo "WARNING: $EMAIL exists in IAM Identity Centre but not in HR roster"
+  fi
+done
+
+echo "=== DONE ==="
 ```
 
 ---

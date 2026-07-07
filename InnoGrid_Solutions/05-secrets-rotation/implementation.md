@@ -211,15 +211,15 @@ def _finish_secret(secret_id, token, username):
 
 ### Deploy Lambda
 
-```powershell
-Compress-Archive -Path lambdas/rotate-iam-keys/* -DestinationPath lambdas/rotate-iam-keys.zip
+```bash
+cd lambdas/rotate-iam-keys && zip -r ../../rotate-iam-keys.zip . && cd -
 
-aws lambda create-function --function-name rotate-iam-keys `
-  --runtime python3.9 --role arn:aws:iam::111122223333:role/rotation-lambda-role `
+aws lambda create-function --function-name rotate-iam-keys \
+  --runtime python3.9 --role arn:aws:iam::111122223333:role/rotation-lambda-role \
   --handler lambda_function.lambda_handler --zip-file fileb://lambdas/rotate-iam-keys.zip
 
 # Attach to each IAM key secret
-aws secretsmanager rotate-secret --secret-id iam/svc-cicd-deploy `
+aws secretsmanager rotate-secret --secret-id iam/svc-cicd-deploy \
   --rotation-lambda-arn arn:aws:lambda:eu-west-2:111122223333:function:rotate-iam-keys
 ```
 
@@ -432,23 +432,23 @@ def _finish_secret(secret_id, token):
 
 ## 5. Initial Secret Population
 
-```powershell
-# scripts/initialize-secrets.ps1
+```bash
+# scripts/initialize-secrets.bash
 # Populate Secrets Manager with initial secret values
 
 # IAM Service Account Keys
-aws secretsmanager create-secret --name iam/svc-cicd-deploy `
+aws secretsmanager create-secret --name iam/svc-cicd-deploy \
   --secret-string '{"username":"svc-cicd-deploy","access_key_id_old":"","secret_access_key_old":"","access_key_id_current":"AKIAIOSFODNN7EXAMPLE","secret_access_key_current":"wJalrXUt...","account_id":"123456789012","region":"eu-west-2","rotation_date":"2026-07-01"}'
 
-aws secretsmanager create-secret --name iam/svc-backup-agent `
+aws secretsmanager create-secret --name iam/svc-backup-agent \
   --secret-string '{"username":"svc-backup-agent","access_key_id_old":"","secret_access_key_old":"","access_key_id_current":"AKIAI44QH8DHBEXAMPLE","secret_access_key_current":"wJalrXUt...","account_id":"777788889999","region":"eu-west-2","rotation_date":"2026-07-01"}'
 
 # RDS Secrets
-aws secretsmanager create-secret --name rds/innodb-prod-app `
+aws secretsmanager create-secret --name rds/innodb-prod-app \
   --secret-string '{"dbInstanceIdentifier":"innodb-prod-app","engine":"postgres","host":"innodb-prod-app.abcdef.eu-west-2.rds.amazonaws.com","port":5432,"username":"app_user","password":"initial-password","dbname":"appdb"}'
 
 # Break-Glass Secrets
-aws secretsmanager create-secret --name break-glass/break-glass-prod `
+aws secretsmanager create-secret --name break-glass/break-glass-prod \
   --secret-string '{"account_id":"777788889999","account_alias":"inno-prod","username":"break-glass-prod","password":"initial-password","rotation_date":"2026-07-01","stored_in_safe":false}'
 ```
 
@@ -456,46 +456,46 @@ aws secretsmanager create-secret --name break-glass/break-glass-prod `
 
 ## 6. Enable Rotation
 
-```powershell
+```bash
 # Attach rotation Lambda to each secret
-$secrets = @(
-  "iam/svc-cicd-deploy",
-  "iam/svc-backup-agent",
-  "iam/svc-monitoring",
-  "iam/svc-sync-workday",
-  "rds/innodb-prod-app",
-  "rds/innodb-nonprod-app",
-  "break-glass/break-glass-mgmt",
-  "break-glass/break-glass-prod",
-  "break-glass/break-glass-sec",
-  "break-glass/break-glass-nonprod",
+secrets=(
+  "iam/svc-cicd-deploy"
+  "iam/svc-backup-agent"
+  "iam/svc-monitoring"
+  "iam/svc-sync-workday"
+  "rds/innodb-prod-app"
+  "rds/innodb-nonprod-app"
+  "break-glass/break-glass-mgmt"
+  "break-glass/break-glass-prod"
+  "break-glass/break-glass-sec"
+  "break-glass/break-glass-nonprod"
   "break-glass/break-glass-sandbox"
 )
 
-$lambdaArn = "arn:aws:lambda:eu-west-2:111122223333:function:rotate-iam-keys"
-$rdsLambdaArn = "arn:aws:lambda:eu-west-2:111122223333:function:rotate-rds-password"
-$breakGlassLambdaArn = "arn:aws:lambda:eu-west-2:111122223333:function:rotate-breakglass"
+lambdaArn="arn:aws:lambda:eu-west-2:111122223333:function:rotate-iam-keys"
+rdsLambdaArn="arn:aws:lambda:eu-west-2:111122223333:function:rotate-rds-password"
+breakGlassLambdaArn="arn:aws:lambda:eu-west-2:111122223333:function:rotate-breakglass"
 
-foreach ($secret in $secrets) {
-  if ($secret -like "iam/*") {
-    aws secretsmanager rotate-secret --secret-id $secret --rotation-lambda-arn $lambdaArn
-  } elseif ($secret -like "rds/*") {
-    aws secretsmanager rotate-secret --secret-id $secret --rotation-lambda-arn $rdsLambdaArn
-  } elseif ($secret -like "break-glass/*") {
-    aws secretsmanager rotate-secret --secret-id $secret --rotation-lambda-arn $breakGlassLambdaArn
-  }
-  Write-Host "Rotation enabled for $secret"
-}
+for secret in "${secrets[@]}"; do
+  if [[ "$secret" == iam/* ]]; then
+    aws secretsmanager rotate-secret --secret-id "$secret" --rotation-lambda-arn "$lambdaArn"
+  elif [[ "$secret" == rds/* ]]; then
+    aws secretsmanager rotate-secret --secret-id "$secret" --rotation-lambda-arn "$rdsLambdaArn"
+  elif [[ "$secret" == break-glass/* ]]; then
+    aws secretsmanager rotate-secret --secret-id "$secret" --rotation-lambda-arn "$breakGlassLambdaArn"
+  fi
+  echo "Rotation enabled for $secret"
+done
 ```
 
 ---
 
 ## 7. Verification & Monitoring
 
-```powershell
+```bash
 # Check rotation status for all secrets
 aws secretsmanager list-secrets --query "
-  SecretList[?RotationEnabled==`true`].{
+  SecretList[?RotationEnabled==\`true\`].{
     Name: Name,
     LastRotated: LastRotatedDate,
     NextRotation: NextRotationDate,
@@ -507,11 +507,11 @@ aws secretsmanager list-secrets --query "
 aws secretsmanager describe-secret --secret-id iam/svc-cicd-deploy
 
 # Test that rotated keys work
-$secret = aws secretsmanager get-secret-value --secret-id iam/svc-cicd-deploy `
-  --query SecretString --output text | ConvertFrom-Json
-aws sts get-caller-identity --profile rotated-key-test `
-  --aws-access-key-id $secret.access_key_id_current `
-  --aws-secret-access-key $secret.secret_access_key_current
+secret=$(aws secretsmanager get-secret-value --secret-id iam/svc-cicd-deploy \
+  --query SecretString --output text)
+aws sts get-caller-identity --profile rotated-key-test \
+  --aws-access-key-id "$(echo "$secret" | jq -r '.access_key_id_current')" \
+  --aws-secret-access-key "$(echo "$secret" | jq -r '.secret_access_key_current')"
 ```
 
 ### CloudTrail Rotation Events
@@ -533,10 +533,10 @@ ORDER BY eventtime DESC;
 
 ### SNS Alert Test
 
-```powershell
+```bash
 # Simulate a rotation failure to verify alerting
-aws secretsmanager rotate-secret --secret-id iam/svc-cicd-deploy `
-  --rotation-lambda-arn arn:aws:lambda:eu-west-2:111122223333:function:rotate-iam-keys `
+aws secretsmanager rotate-secret --secret-id iam/svc-cicd-deploy \
+  --rotation-lambda-arn arn:aws:lambda:eu-west-2:111122223333:function:rotate-iam-keys \
   --rotate-immediately
 ```
 
@@ -567,8 +567,8 @@ aws secretsmanager rotate-secret --secret-id iam/svc-cicd-deploy `
 2. Click **Manage password**
 3. Enter new password (32 characters, complex)
 4. Store in Secrets Manager:
-   ```powershell
-   aws secretsmanager put-secret-value --secret-id break-glass/break-glass-prod `
+   ```bash
+   aws secretsmanager put-secret-value --secret-id break-glass/break-glass-prod \
      --secret-string '{"username":"break-glass-prod","password":"new-password","rotation_date":"2026-07-01"}'
    ```
 5. Print new password, seal in envelope, place in fireproof safe

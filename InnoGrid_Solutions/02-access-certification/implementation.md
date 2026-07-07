@@ -136,7 +136,7 @@ print("Review manifest generated: q3-2026-review-manifest.csv")
 ```
 
 **Run:**
-```powershell
+```bash
 python scripts/generate_review_manifest.py
 ```
 
@@ -146,23 +146,30 @@ python scripts/generate_review_manifest.py
 
 ### PowerShell: Send Review Invitations
 
-```powershell
-# scripts/send-review-invitations.ps1
-$manifest = Import-Csv "q3-2026-review-manifest.csv"
-$reviewers = $manifest | Group-Object manager_email
+```bash
+# scripts/send-review-invitations.sh
+manifest="q3-2026-review-manifest.csv"
 
-foreach ($reviewer in $reviewers) {
-    $mgrEmail = $reviewer.Name
-    $mgrName = $reviewer.Group[0].manager_name
-    $reportCount = ($reviewer.Group | Select-Object user_email -Unique).Count
-    $reportList = ($reviewer.Group | Select-Object user_name -Unique).user_name -join ", "
+# Group by manager_email and generate invitations
+awk -F, '
+NR > 1 {
+    if (!seen_name[$4,$2]++) {
+        reports[$4] = reports[$4] ? reports[$4]", "$2 : $2
+        count[$4]++
+    }
+    mgr_name[$4] = $5
+}
+END {
+    for (mgr in reports) {
+        print mgr "|" mgr_name[mgr] "|" count[mgr] "|" reports[mgr]
+    }
+}
+' "$manifest" | while IFS='|' read -r mgr_email mgr_name report_count report_list; do
+    body="Hi ${mgr_name},
 
-    $body = @"
-Hi $mgrName,
+The Q3 2026 access review campaign is now open. You have ${report_count} direct reports to review:
 
-The Q3 2026 access review campaign is now open. You have $reportCount direct reports to review:
-
-Reports: $reportList
+Reports: ${report_list}
 
 Please review their access and submit your decisions by July 14, 2026.
 
@@ -173,17 +180,16 @@ Instructions:
 4. Add any notes in the notes column
 5. Return the completed CSV to the IAM team
 
-If all access looks correct, you can simply reply "APPROVE ALL" to this email.
+If all access looks correct, you can simply reply \"APPROVE ALL\" to this email.
 
 Thank you,
-IAM Team
-"@
+IAM Team"
 
-    Write-Host "Sending review invitation to $mgrEmail ($mgrName)"
-    Write-Host "Reports: $reportList"
-    Write-Host "---"
-    # In production, this would use Send-MailMessage or an API
-}
+    echo "Sending review invitation to ${mgr_email} (${mgr_name})"
+    echo "Reports: ${report_list}"
+    echo "---"
+    # In production, this would use an email API
+done
 ```
 
 ---
@@ -289,23 +295,26 @@ print("\nReview processing complete.")
 
 ### PowerShell: Revoke Unrecertified Users
 
-```powershell
-# scripts/revoke-unrecertified.ps1
+```bash
+# scripts/revoke-unrecertified.sh
 # Run after July 14 deadline
-$manifest = Import-Csv "q3-2026-review-manifest.csv"
-$unreviewed = $manifest | Where-Object { [string]::IsNullOrWhiteSpace($_.decision) }
+manifest="q3-2026-review-manifest.csv"
 
-if ($unreviewed.Count -eq 0) {
-    Write-Host "All access has been recertified. No auto-revocation needed."
+# Find unreviewed entries (empty decision field - column 10)
+unreviewed=$(tail -n +2 "$manifest" | awk -F, '$10 == ""')
+
+if [ -z "$unreviewed" ]; then
+    echo "All access has been recertified. No auto-revocation needed."
     exit 0
-}
+fi
 
-Write-Host "Found $($unreviewed.Count) unrecertified assignments. Revoking..."
-foreach ($row in $unreviewed) {
-    Write-Host "  REVOKING: $($row.user_email) - $($row.group) on $($row.account_name)"
+count=$(echo "$unreviewed" | wc -l)
+echo "Found $count unrecertified assignments. Revoking..."
+echo "$unreviewed" | while IFS=, read -r user_email user_name department manager_email manager_name group perm_set acct_id acct_name decision notes; do
+    echo "  REVOKING: $user_email - $group on $acct_name"
     # In production, this would remove the user from the group via AWS CLI
     # aws identitystore delete-group-membership ...
-}
+done
 ```
 
 ---
@@ -314,25 +323,25 @@ foreach ($row in $unreviewed) {
 
 ### PowerShell: Restore Grace Kim's Access
 
-```powershell
-# scripts/restore-leave-user.ps1
+```bash
+# scripts/restore-leave-user.sh
 # Run on 2026-08-01 when Grace Kim returns from leave
-$identityStoreId = "d-9a7b8c6d5e"
+identityStoreId="d-9a7b8c6d5e"
 
-$graceUserId = aws identitystore list-users --identity-store-id $identityStoreId `
-  --filter AttributePath=UserName,AttributeValue=grace.kim@innogrid.com `
-  --query "Users[0].UserId" --output text
+graceUserId=$(aws identitystore list-users --identity-store-id "$identityStoreId" \
+  --filter AttributePath=UserName,AttributeValue=grace.kim@innogrid.com \
+  --query "Users[0].UserId" --output text)
 
 # Get the finance group ID
-$financeGroupId = aws identitystore list-groups --identity-store-id $identityStoreId `
-  --filter AttributePath=DisplayName,AttributeValue=finance `
-  --query "Groups[0].GroupId" --output text
+financeGroupId=$(aws identitystore list-groups --identity-store-id "$identityStoreId" \
+  --filter AttributePath=DisplayName,AttributeValue=finance \
+  --query "Groups[0].GroupId" --output text)
 
 # Re-add Grace to the finance group
-aws identitystore create-group-membership --identity-store-id $identityStoreId `
-  --group-id $financeGroupId --member-id $graceUserId
+aws identitystore create-group-membership --identity-store-id "$identityStoreId" \
+  --group-id "$financeGroupId" --member-id "$graceUserId"
 
-Write-Host "Grace Kim restored to finance group. Access reactivated."
+echo "Grace Kim restored to finance group. Access reactivated."
 ```
 
 ---

@@ -13,10 +13,10 @@
 
 ### Step 1: Get IAM Identity Centre Metadata
 
-```powershell
+```bash
 # Download IAM Identity Centre SAML metadata
-$instanceArn = "arn:aws:sso:::instance/ssoins-1234567890abcdef"
-aws sso-admin describe-instance --instance-arn $instanceArn --query "IdentityStoreId"
+instanceArn="arn:aws:sso:::instance/ssoins-1234567890abcdef"
+aws sso-admin describe-instance --instance-arn "$instanceArn" --query "IdentityStoreId"
 
 # Get the AWS access portal URL
 aws sso-admin list-instances --query "Instances[0].LoginUrl"
@@ -34,7 +34,7 @@ aws sso-admin list-instances --query "Instances[0].LoginUrl"
 
 ### Step 3: Configure IAM Identity Centre to Trust Entra ID
 
-```powershell
+```bash
 # Upload Entra ID SAML metadata to IAM Identity Centre
 # Via AWS Console: IAM Identity Centre → Settings → Identity source → Change identity source
 # Select "External identity provider"
@@ -70,7 +70,7 @@ Console steps:
 
 ### Step 1: Generate SCIM Endpoint in IAM Identity Centre
 
-```powershell
+```bash
 # Get the SCIM endpoint URL
 aws identitystore describe-identity-store --identity-store-id d-9a7b8c6d5e
 # Returns: IdentityStoreId, SCIM endpoint URL
@@ -107,7 +107,7 @@ Console Steps:
 
 ### Step 3: Test SCIM Sync
 
-```powershell
+```bash
 # Trigger an initial provisioning cycle
 # Azure Portal → Provisioning → "Provision on demand"
 # Select a test user (e.g., diana.cruz@innogrid.com)
@@ -115,9 +115,9 @@ Console Steps:
 
 Verification:
 
-```powershell
+```bash
 # Verify Diana Cruz now exists in IAM Identity Centre
-aws identitystore list-users --identity-store-id d-9a7b8c6d5e `
+aws identitystore list-users --identity-store-id d-9a7b8c6d5e \
   --filter AttributePath=UserName,AttributeValue=diana.cruz@innogrid.com
 
 # Expected: User exists with attributes synced from Entra ID
@@ -129,7 +129,7 @@ aws identitystore list-users --identity-store-id d-9a7b8c6d5e `
 
 ### Step 1: Require MFA for AWS
 
-```powershell
+```bash
 # Via Azure Portal (these must be configured in the Entra ID admin centre)
 ```
 
@@ -163,7 +163,7 @@ aws identitystore list-users --identity-store-id d-9a7b8c6d5e `
 
 Configured in IAM Identity Centre:
 
-```powershell
+```bash
 # Set the default session duration for federated users
 # Via Console: IAM Identity Centre → Settings → Session settings
 # Set: "Access portal session duration" = 8 hours
@@ -175,7 +175,7 @@ Configured in IAM Identity Centre:
 
 ### Test 1: Corporate User SSO
 
-```powershell
+```bash
 # Simulate Diana Cruz (Finance) login flow:
 # 1. Browse to https://myapps.microsoft.com
 # 2. Sign in as diana.cruz@innogrid.com
@@ -187,7 +187,7 @@ Configured in IAM Identity Centre:
 
 ### Test 2: SCIM Deprovisioning
 
-```powershell
+```bash
 # 1. In Entra ID, disable a test corporate user
 # 2. Wait for SCIM sync (runs every ~40 minutes by default, or trigger on-demand)
 # 3. Verify user is disabled in IAM Identity Centre:
@@ -197,7 +197,7 @@ aws identitystore describe-user --identity-store-id d-9a7b8c6d5e --user-id "<use
 
 ### Test 3: Engineering User Direct Auth
 
-```powershell
+```bash
 # Verify Alex Rivera (Engineering, IAM Identity Centre-native) can still log in
 # directly via the AWS access portal without Entra ID:
 # Browse to https://innogrid.awsapps.com/start
@@ -231,7 +231,7 @@ https://innogrid.awsapps.com/start
 
 ### SCIM Provisioning Logs
 
-```powershell
+```bash
 # View SCIM sync logs in Entra ID
 # Azure Portal → Enterprise applications → InnoGrid AWS SSO → Provisioning → View provisioning logs
 ```
@@ -254,7 +254,7 @@ ORDER BY eventtime;
 
 ### Conditional Access Sign-in Logs
 
-```powershell
+```bash
 # Azure Portal → Entra ID → Sign-in logs
 # Filter by: Application = "AWS IAM Identity Centre"
 # Check: "Conditional Access" tab for each sign-in to see which policies were applied

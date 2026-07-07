@@ -278,8 +278,8 @@ module "rbac" {
 
 ## 3. Apply RBAC
 
-```powershell
-Set-Location "terraform/environments/prod"
+```bash
+cd terraform/environments/prod
 terraform init
 terraform plan -out=rbac.tfplan
 terraform apply rbac.tfplan
@@ -391,122 +391,120 @@ resource "aws_cloudwatch_event_target" "jit_revoker" {
 
 ### PowerShell: Migrate Users to New Groups
 
-```powershell
-# scripts/migrate-to-rbac.ps1
-$identityStoreId = "d-9a7b8c6d5e"
+```bash
+# scripts/migrate-to-rbac.sh
+identityStoreId="d-9a7b8c6d5e"
 
-$migration = @{
-    "alex.rivera@innogrid.com" = @("platform-engineering-senior")
-    "sam.green@innogrid.com"   = @("platform-engineering-engineer")
-    "daniel.park@innogrid.com" = @("platform-engineering-engineer")
-    "maya.johnson@innogrid.com" = @("platform-engineering-engineer")
-    "ethan.brown@innogrid.com" = @("app-dev-engineer")
-    "chloe.wilson@innogrid.com" = @("qa-engineer")
-    "aisha.patel@innogrid.com" = @("iam-admin")
-    "miguel.torres@innogrid.com" = @("iam-admin")
-    "jake.hoffman@innogrid.com" = @("soc-analyst")
-    "olivia.reed@innogrid.com" = @("soc-analyst")
-    "emily.zhao@innogrid.com" = @("service-desk-support")
-    "amanda.foster@innogrid.com" = @("hr-reader")
-    "jordan.bell@innogrid.com" = @("hr-reader")
-    "diana.cruz@innogrid.com" = @("finance-reader")
-    "sarah.huang@innogrid.com" = @("legal-reader")
-    "nina.patel@innogrid.com" = @("marketing-reader")
-    "chris.evans@innogrid.com" = @("marketing-reader")
-    "tom.watson@innogrid.com" = @("marketing-reader")
-    "ben.schneider@innogrid.com" = @("operations-reader")
-    "maria.gomez@innogrid.com" = @("operations-reader")
-    "priya.sharma@innogrid.com" = @("platform-engineering-lead")
-    "derek.jones@innogrid.com" = @("app-dev-senior")
-    "lisa.kim@innogrid.com" = @("qa-engineer")
-    "ryan.mitchell@innogrid.com" = @("iam-admin")
-    "tanya.brooks@innogrid.com" = @("soc-analyst")
-    "carlos.mendez@innogrid.com" = @("service-desk-support")
-    "james.okafo@innogrid.com" = @("platform-engineering-lead")
-    "david.park@innogrid.com" = @("executive-reader")
-    "elena.vasquez@innogrid.com" = @("executive-reader")
-    "mark.tanaka@innogrid.com" = @("executive-reader")
-    "sarah.chen@innogrid.com" = @("executive-reader")
-}
+declare -A migration
+migration["alex.rivera@innogrid.com"]="platform-engineering-senior"
+migration["sam.green@innogrid.com"]="platform-engineering-engineer"
+migration["daniel.park@innogrid.com"]="platform-engineering-engineer"
+migration["maya.johnson@innogrid.com"]="platform-engineering-engineer"
+migration["ethan.brown@innogrid.com"]="app-dev-engineer"
+migration["chloe.wilson@innogrid.com"]="qa-engineer"
+migration["aisha.patel@innogrid.com"]="iam-admin"
+migration["miguel.torres@innogrid.com"]="iam-admin"
+migration["jake.hoffman@innogrid.com"]="soc-analyst"
+migration["olivia.reed@innogrid.com"]="soc-analyst"
+migration["emily.zhao@innogrid.com"]="service-desk-support"
+migration["amanda.foster@innogrid.com"]="hr-reader"
+migration["jordan.bell@innogrid.com"]="hr-reader"
+migration["diana.cruz@innogrid.com"]="finance-reader"
+migration["sarah.huang@innogrid.com"]="legal-reader"
+migration["nina.patel@innogrid.com"]="marketing-reader"
+migration["chris.evans@innogrid.com"]="marketing-reader"
+migration["tom.watson@innogrid.com"]="marketing-reader"
+migration["ben.schneider@innogrid.com"]="operations-reader"
+migration["maria.gomez@innogrid.com"]="operations-reader"
+migration["priya.sharma@innogrid.com"]="platform-engineering-lead"
+migration["derek.jones@innogrid.com"]="app-dev-senior"
+migration["lisa.kim@innogrid.com"]="qa-engineer"
+migration["ryan.mitchell@innogrid.com"]="iam-admin"
+migration["tanya.brooks@innogrid.com"]="soc-analyst"
+migration["carlos.mendez@innogrid.com"]="service-desk-support"
+migration["james.okafo@innogrid.com"]="platform-engineering-lead"
+migration["david.park@innogrid.com"]="executive-reader"
+migration["elena.vasquez@innogrid.com"]="executive-reader"
+migration["mark.tanaka@innogrid.com"]="executive-reader"
+migration["sarah.chen@innogrid.com"]="executive-reader"
 
-$oldGroups = @("Engineering-Team", "DevAccess-Group", "app-dev", "platform-engineers",
-               "qa-engineers", "iam-engineers", "soc-team", "helpdesk",
-               "finance-team", "hr-team", "legal-team", "marketing-team",
-               "operations-team", "exec-team", "Alex-Admin", "old-group-2024")
+oldGroups=("Engineering-Team" "DevAccess-Group" "app-dev" "platform-engineers"
+           "qa-engineers" "iam-engineers" "soc-team" "helpdesk"
+           "finance-team" "hr-team" "legal-team" "marketing-team"
+           "operations-team" "exec-team" "Alex-Admin" "old-group-2024")
 
-Write-Host "=== PHASE 2: Adding users to new RBAC groups ==="
-foreach ($email in $migration.Keys) {
-    $userId = aws identitystore list-users --identity-store-id $identityStoreId `
-        --filter AttributePath=UserName,AttributeValue=$email `
-        --query "Users[0].UserId" --output text
+echo "=== PHASE 2: Adding users to new RBAC groups ==="
+for email in "${!migration[@]}"; do
+    userId=$(aws identitystore list-users --identity-store-id "$identityStoreId" \
+        --filter AttributePath=UserName,AttributeValue="$email" \
+        --query "Users[0].UserId" --output text)
 
-    foreach ($groupName in $migration[$email]) {
-        $groupId = aws identitystore list-groups --identity-store-id $identityStoreId `
-            --filter AttributePath=DisplayName,AttributeValue=$groupName `
-            --query "Groups[0].GroupId" --output text
+    groupName="${migration[$email]}"
+    groupId=$(aws identitystore list-groups --identity-store-id "$identityStoreId" \
+        --filter AttributePath=DisplayName,AttributeValue="$groupName" \
+        --query "Groups[0].GroupId" --output text)
 
-        aws identitystore create-group-membership --identity-store-id $identityStoreId `
-            --group-id $groupId --member-id $userId
-        Write-Host "  + $email → $groupName"
-    }
-}
+    aws identitystore create-group-membership --identity-store-id "$identityStoreId" \
+        --group-id "$groupId" --member-id "$userId"
+    echo "  + $email → $groupName"
+done
 
-Write-Host "=== PHASE 4: Removing users from old groups ==="
-foreach ($email in $migration.Keys) {
-    $userId = aws identitystore list-users --identity-store-id $identityStoreId `
-        --filter AttributePath=UserName,AttributeValue=$email `
-        --query "Users[0].UserId" --output text
+echo "=== PHASE 4: Removing users from old groups ==="
+for email in "${!migration[@]}"; do
+    userId=$(aws identitystore list-users --identity-store-id "$identityStoreId" \
+        --filter AttributePath=UserName,AttributeValue="$email" \
+        --query "Users[0].UserId" --output text)
 
-    foreach ($oldGroup in $oldGroups) {
-        $groupId = aws identitystore list-groups --identity-store-id $identityStoreId `
-            --filter AttributePath=DisplayName,AttributeValue=$oldGroup `
-            --query "Groups[0].GroupId" --output text
-        if (-not $groupId) { continue }
+    for oldGroup in "${oldGroups[@]}"; do
+        groupId=$(aws identitystore list-groups --identity-store-id "$identityStoreId" \
+            --filter AttributePath=DisplayName,AttributeValue="$oldGroup" \
+            --query "Groups[0].GroupId" --output text)
+        if [ -z "$groupId" ]; then continue; fi
 
-        $membershipId = aws identitystore list-group-memberships --identity-store-id $identityStoreId `
-            --group-id $groupId --query "GroupMemberships[?MemberId.UserId=='$userId'].MembershipId" --output text
-        if ($membershipId) {
-            aws identitystore delete-group-membership --identity-store-id $identityStoreId `
-                --membership-id $membershipId
-            Write-Host "  - $email → $oldGroup (removed)"
-        }
-    }
-}
+        membershipId=$(aws identitystore list-group-memberships --identity-store-id "$identityStoreId" \
+            --group-id "$groupId" --query "GroupMemberships[?MemberId.UserId=='$userId'].MembershipId" --output text)
+        if [ -n "$membershipId" ]; then
+            aws identitystore delete-group-membership --identity-store-id "$identityStoreId" \
+                --membership-id "$membershipId"
+            echo "  - $email → $oldGroup (removed)"
+        fi
+    done
+done
 
-Write-Host "=== PHASE 5: Cleaning up orphaned groups ==="
-foreach ($oldGroup in $oldGroups) {
-    $groupId = aws identitystore list-groups --identity-store-id $identityStoreId `
-        --filter AttributePath=DisplayName,AttributeValue=$oldGroup `
-        --query "Groups[0].GroupId" --output text
-    if ($groupId) {
-        aws identitystore list-group-memberships --identity-store-id $identityStoreId `
-            --group-id $groupId --query "length(GroupMemberships)"
+echo "=== PHASE 5: Cleaning up orphaned groups ==="
+for oldGroup in "${oldGroups[@]}"; do
+    groupId=$(aws identitystore list-groups --identity-store-id "$identityStoreId" \
+        --filter AttributePath=DisplayName,AttributeValue="$oldGroup" \
+        --query "Groups[0].GroupId" --output text)
+    if [ -n "$groupId" ]; then
+        aws identitystore list-group-memberships --identity-store-id "$identityStoreId" \
+            --group-id "$groupId" --query "length(GroupMemberships)"
         # If zero members, safe to delete
-        aws identitystore delete-group --identity-store-id $identityStoreId --group-id $groupId
-        Write-Host "  DELETED: $oldGroup"
-    }
-}
+        aws identitystore delete-group --identity-store-id "$identityStoreId" --group-id "$groupId"
+        echo "  DELETED: $oldGroup"
+    fi
+done
 
-Write-Host "=== MIGRATION COMPLETE ==="
+echo "=== MIGRATION COMPLETE ==="
 ```
 
 ---
 
 ## 6. Verification
 
-```powershell
+```bash
 # Verify Alex Rivera has correct RBAC group memberships
-aws identitystore list-group-memberships --identity-store-id d-9a7b8c6d5e `
+aws identitystore list-group-memberships --identity-store-id d-9a7b8c6d5e \
   --member-id UserId="<alex-user-id>"
 # Expected: platform-engineering-senior only (no old groups)
 
 # Verify Finance reader can access Prod
-aws sso-admin list-account-assignments --instance-arn "arn:aws:sso:::instance/ssoins-1234567890abcdef" `
+aws sso-admin list-account-assignments --instance-arn "arn:aws:sso:::instance/ssoins-1234567890abcdef" \
   --account-id 777788889999 --principal-type GROUP --principal-id "<finance-reader-group-id>"
 # Expected: Prod-ReadOnly
 
 # Verify no old groups remain
-aws identitystore list-groups --identity-store-id d-9a7b8c6d5e | ConvertFrom-Json
+aws identitystore list-groups --identity-store-id d-9a7b8c6d5e | jq
 # Expected: Only the 16 RBAC groups
 ```
 

@@ -33,7 +33,7 @@
 
 ### Method 2: AWS CLI
 
-```powershell
+```bash
 # IAM Identity Centre is enabled via AWS Organizations.
 # First, verify Organizations is ready:
 aws organizations describe-organization
@@ -142,27 +142,26 @@ resource "aws_identitystore_group" "break_glass" {
 
 ### AWS CLI
 
-```powershell
-# Create each group
-$IdentityStoreId = "d-9a7b8c6d5e"
+```bash
+IDENTITY_STORE_ID="d-9a7b8c6d5e"
 
-function Create-Group($displayName, $description) {
-  aws identitystore create-group `
-    --identity-store-id $IdentityStoreId `
-    --display-name $displayName `
-    --description $description
+create_group() {
+  aws identitystore create-group \
+    --identity-store-id "$IDENTITY_STORE_ID" \
+    --display-name "$1" \
+    --description "$2"
 }
 
-Create-Group "engineering" "All engineers — grants baseline DevAccess to Nonproduction"
-Create-Group "platform-engineers" "Platform engineering team"
-Create-Group "app-dev" "Application development team"
-Create-Group "qa-engineers" "QA and testing team"
-Create-Group "engineering-managers" "Engineering management (M2+ level)"
-Create-Group "it-security" "IT and Security department"
-Create-Group "iam-team" "IAM administration team — privileged group"
-Create-Group "soc-team" "Security operations team"
-Create-Group "service-desk" "IT support and service desk team"
-Create-Group "break-glass" "Emergency access group — privileged, monitored"
+create_group "engineering" "All engineers — grants baseline DevAccess to Nonproduction"
+create_group "platform-engineers" "Platform engineering team"
+create_group "app-dev" "Application development team"
+create_group "qa-engineers" "QA and testing team"
+create_group "engineering-managers" "Engineering management (M2+ level)"
+create_group "it-security" "IT and Security department"
+create_group "iam-team" "IAM administration team — privileged group"
+create_group "soc-team" "Security operations team"
+create_group "service-desk" "IT support and service desk team"
+create_group "break-glass" "Emergency access group — privileged, monitored"
 ```
 
 ### AWS Console
@@ -291,28 +290,28 @@ resource "aws_ssoadmin_managed_policy_attachment" "power_user_attach" {
 
 ### AWS CLI
 
-```powershell
-$InstanceArn = "arn:aws:sso:::instance/ssoins-1234567890abcdef"
+```bash
+INSTANCE_ARN="arn:aws:sso:::instance/ssoins-1234567890abcdef"
 
 # Create DevAccess permission set
-$DevAccessArn = aws sso-admin create-permission-set `
-  --instance-arn $InstanceArn `
-  --name "DevAccess" `
-  --session-duration "PT8H" `
-  --relay-state "https://console.aws.amazon.com/ec2" `
-  --query "PermissionSet.PermissionSetArn" --output text
+DEV_ACCESS_ARN=$(aws sso-admin create-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --name "DevAccess" \
+  --session-duration "PT8H" \
+  --relay-state "https://console.aws.amazon.com/ec2" \
+  --query "PermissionSet.PermissionSetArn" --output text)
 
 # Attach ReadOnlyAccess managed policy
-aws sso-admin attach-managed-policy-to-permission-set `
-  --instance-arn $InstanceArn `
-  --permission-set-arn $DevAccessArn `
+aws sso-admin attach-managed-policy-to-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --permission-set-arn "$DEV_ACCESS_ARN" \
   --managed-policy-arn "arn:aws:iam::aws:policy/ReadOnlyAccess"
 
 # Create inline policy for S3 dev artifacts
-aws sso-admin put-inline-policy-to-permission-set `
-  --instance-arn $InstanceArn `
-  --permission-set-arn $DevAccessArn `
-  --inline-policy (Get-Content -Raw .\policies\dev-access-inline.json)
+aws sso-admin put-inline-policy-to-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --permission-set-arn "$DEV_ACCESS_ARN" \
+  --inline-policy "$(cat policies/dev-access-inline.json)"
 
 # Repeat for ReadOnly, SecurityAudit, AdministratorAccess, PowerUserAccess
 # (omitted for brevity — same pattern with different names/policies)
@@ -692,38 +691,43 @@ resource "aws_identitystore_user" "kevin_nguyen" {
 
 ### AWS CLI
 
-```powershell
-$IdentityStoreId = "d-9a7b8c6d5e"
+```bash
+IDENTITY_STORE_ID="d-9a7b8c6d5e"
 
-function Create-User($givenName, $familyName, $email, $userType) {
-  aws identitystore create-user `
-    --identity-store-id $IdentityStoreId `
-    --user-name $email `
-    --display-name "$givenName $familyName" `
-    --name GivenName=$givenName,FamilyName=$familyName `
-    --emails "[{\"value\":\"$email\",\"primary\":true}]" `
-    --user-type $userType `
+create_user() {
+  local GIVEN_NAME="$1"
+  local FAMILY_NAME="$2"
+  local EMAIL="$3"
+  local USER_TYPE="$4"
+
+  aws identitystore create-user \
+    --identity-store-id "$IDENTITY_STORE_ID" \
+    --user-name "$EMAIL" \
+    --display-name "$GIVEN_NAME $FAMILY_NAME" \
+    --name "GivenName=$GIVEN_NAME,FamilyName=$FAMILY_NAME" \
+    --emails "[{\"value\":\"$EMAIL\",\"primary\":true}]" \
+    --user-type "$USER_TYPE" \
     --locale "en-GB"
 }
 
-Create-User "James" "Okafor" "james.okafor@innogrid.com" "Exec"
-Create-User "Priya" "Sharma" "priya.sharma@innogrid.com" "M2"
-Create-User "Derek" "Jones" "derek.jones@innogrid.com" "M2"
-Create-User "Lisa" "Kim" "lisa.kim@innogrid.com" "M2"
-Create-User "Alex" "Rivera" "alex.rivera@innogrid.com" "IC4"
-Create-User "Sam" "Green" "sam.green@innogrid.com" "IC3"
-Create-User "Maya" "Johnson" "maya.johnson@innogrid.com" "IC3"
-Create-User "Ethan" "Brown" "ethan.brown@innogrid.com" "IC2"
-Create-User "Chloe" "Wilson" "chloe.wilson@innogrid.com" "IC2"
-Create-User "Ryan" "Mitchell" "ryan.mitchell@innogrid.com" "M2"
-Create-User "Aisha" "Patel" "aisha.patel@innogrid.com" "IC4"
-Create-User "Miguel" "Torres" "miguel.torres@innogrid.com" "IC3"
-Create-User "Tanya" "Brooks" "tanya.brooks@innogrid.com" "M2"
-Create-User "Jake" "Hoffman" "jake.hoffman@innogrid.com" "IC4"
-Create-User "Olivia" "Reed" "olivia.reed@innogrid.com" "IC2"
-Create-User "Carlos" "Mendez" "carlos.mendez@innogrid.com" "M1"
-Create-User "Emily" "Zhao" "emily.zhao@innogrid.com" "IC3"
-Create-User "Kevin" "Nguyen" "kevin.nguyen@innogrid.com" "IC1"
+create_user "James" "Okafor" "james.okafor@innogrid.com" "Exec"
+create_user "Priya" "Sharma" "priya.sharma@innogrid.com" "M2"
+create_user "Derek" "Jones" "derek.jones@innogrid.com" "M2"
+create_user "Lisa" "Kim" "lisa.kim@innogrid.com" "M2"
+create_user "Alex" "Rivera" "alex.rivera@innogrid.com" "IC4"
+create_user "Sam" "Green" "sam.green@innogrid.com" "IC3"
+create_user "Maya" "Johnson" "maya.johnson@innogrid.com" "IC3"
+create_user "Ethan" "Brown" "ethan.brown@innogrid.com" "IC2"
+create_user "Chloe" "Wilson" "chloe.wilson@innogrid.com" "IC2"
+create_user "Ryan" "Mitchell" "ryan.mitchell@innogrid.com" "M2"
+create_user "Aisha" "Patel" "aisha.patel@innogrid.com" "IC4"
+create_user "Miguel" "Torres" "miguel.torres@innogrid.com" "IC3"
+create_user "Tanya" "Brooks" "tanya.brooks@innogrid.com" "M2"
+create_user "Jake" "Hoffman" "jake.hoffman@innogrid.com" "IC4"
+create_user "Olivia" "Reed" "olivia.reed@innogrid.com" "IC2"
+create_user "Carlos" "Mendez" "carlos.mendez@innogrid.com" "M1"
+create_user "Emily" "Zhao" "emily.zhao@innogrid.com" "IC3"
+create_user "Kevin" "Nguyen" "kevin.nguyen@innogrid.com" "IC1"
 ```
 
 ### AWS Console
@@ -1020,94 +1024,88 @@ resource "aws_identitystore_group_membership" "aisha_patel_break_glass" {
 
 ### AWS CLI
 
-```powershell
-$IdentityStoreId = "d-9a7b8c6d5e"
+```bash
+IDENTITY_STORE_ID="d-9a7b8c6d5e"
 
-# Helper: get group ID
-function Get-GroupId($displayName) {
-  aws identitystore list-groups --identity-store-id $IdentityStoreId `
-    --filter AttributePath=DisplayName,AttributeValue=$displayName `
+get_group_id() {
+  aws identitystore list-groups --identity-store-id "$IDENTITY_STORE_ID" \
+    --filter "AttributePath=DisplayName,AttributeValue=$1" \
     --query "Groups[0].GroupId" --output text
 }
 
-# Helper: get user ID
-function Get-UserId($userName) {
-  aws identitystore list-users --identity-store-id $IdentityStoreId `
-    --filter AttributePath=UserName,AttributeValue=$userName `
+get_user_id() {
+  aws identitystore list-users --identity-store-id "$IDENTITY_STORE_ID" \
+    --filter "AttributePath=UserName,AttributeValue=$1" \
     --query "Users[0].UserId" --output text
 }
 
-# Add user to group
-function Add-ToGroup($userEmail, $groupName) {
-  $groupId = Get-GroupId $groupName
-  $userId = Get-UserId $userEmail
-  aws identitystore create-group-membership `
-    --identity-store-id $IdentityStoreId `
-    --group-id $groupId `
-    --member-id $userId
-  Write-Host "Added $userEmail to $groupName"
+add_to_group() {
+  local USER_EMAIL="$1"
+  local GROUP_NAME="$2"
+  local GROUP_ID
+  local USER_ID
+
+  GROUP_ID=$(get_group_id "$GROUP_NAME")
+  USER_ID=$(get_user_id "$USER_EMAIL")
+
+  aws identitystore create-group-membership \
+    --identity-store-id "$IDENTITY_STORE_ID" \
+    --group-id "$GROUP_ID" \
+    --member-id "$USER_ID"
+
+  echo "Added $USER_EMAIL to $GROUP_NAME"
 }
 
-# Engineering managers
-Add-ToGroup "james.okafor@innogrid.com" "engineering-managers"
-Add-ToGroup "priya.sharma@innogrid.com" "engineering-managers"
-Add-ToGroup "derek.jones@innogrid.com" "engineering-managers"
-Add-ToGroup "lisa.kim@innogrid.com" "engineering-managers"
+add_to_group "james.okafor@innogrid.com" "engineering-managers"
+add_to_group "priya.sharma@innogrid.com" "engineering-managers"
+add_to_group "derek.jones@innogrid.com" "engineering-managers"
+add_to_group "lisa.kim@innogrid.com" "engineering-managers"
 
-# Engineering (all engineers)
-Add-ToGroup "james.okafor@innogrid.com" "engineering"
-Add-ToGroup "priya.sharma@innogrid.com" "engineering"
-Add-ToGroup "derek.jones@innogrid.com" "engineering"
-Add-ToGroup "lisa.kim@innogrid.com" "engineering"
-Add-ToGroup "alex.rivera@innogrid.com" "engineering"
-Add-ToGroup "sam.green@innogrid.com" "engineering"
-Add-ToGroup "maya.johnson@innogrid.com" "engineering"
-Add-ToGroup "ethan.brown@innogrid.com" "engineering"
-Add-ToGroup "chloe.wilson@innogrid.com" "engineering"
+add_to_group "james.okafor@innogrid.com" "engineering"
+add_to_group "priya.sharma@innogrid.com" "engineering"
+add_to_group "derek.jones@innogrid.com" "engineering"
+add_to_group "lisa.kim@innogrid.com" "engineering"
+add_to_group "alex.rivera@innogrid.com" "engineering"
+add_to_group "sam.green@innogrid.com" "engineering"
+add_to_group "maya.johnson@innogrid.com" "engineering"
+add_to_group "ethan.brown@innogrid.com" "engineering"
+add_to_group "chloe.wilson@innogrid.com" "engineering"
 
-# Platform engineers
-Add-ToGroup "priya.sharma@innogrid.com" "platform-engineers"
-Add-ToGroup "alex.rivera@innogrid.com" "platform-engineers"
-Add-ToGroup "sam.green@innogrid.com" "platform-engineers"
+add_to_group "priya.sharma@innogrid.com" "platform-engineers"
+add_to_group "alex.rivera@innogrid.com" "platform-engineers"
+add_to_group "sam.green@innogrid.com" "platform-engineers"
 
-# App dev
-Add-ToGroup "derek.jones@innogrid.com" "app-dev"
-Add-ToGroup "maya.johnson@innogrid.com" "app-dev"
-Add-ToGroup "ethan.brown@innogrid.com" "app-dev"
+add_to_group "derek.jones@innogrid.com" "app-dev"
+add_to_group "maya.johnson@innogrid.com" "app-dev"
+add_to_group "ethan.brown@innogrid.com" "app-dev"
 
-# QA engineers
-Add-ToGroup "lisa.kim@innogrid.com" "qa-engineers"
-Add-ToGroup "chloe.wilson@innogrid.com" "qa-engineers"
+add_to_group "lisa.kim@innogrid.com" "qa-engineers"
+add_to_group "chloe.wilson@innogrid.com" "qa-engineers"
 
-# IT & Security
-Add-ToGroup "ryan.mitchell@innogrid.com" "it-security"
-Add-ToGroup "aisha.patel@innogrid.com" "it-security"
-Add-ToGroup "miguel.torres@innogrid.com" "it-security"
-Add-ToGroup "tanya.brooks@innogrid.com" "it-security"
-Add-ToGroup "jake.hoffman@innogrid.com" "it-security"
-Add-ToGroup "olivia.reed@innogrid.com" "it-security"
-Add-ToGroup "carlos.mendez@innogrid.com" "it-security"
-Add-ToGroup "emily.zhao@innogrid.com" "it-security"
-Add-ToGroup "kevin.nguyen@innogrid.com" "it-security"
+add_to_group "ryan.mitchell@innogrid.com" "it-security"
+add_to_group "aisha.patel@innogrid.com" "it-security"
+add_to_group "miguel.torres@innogrid.com" "it-security"
+add_to_group "tanya.brooks@innogrid.com" "it-security"
+add_to_group "jake.hoffman@innogrid.com" "it-security"
+add_to_group "olivia.reed@innogrid.com" "it-security"
+add_to_group "carlos.mendez@innogrid.com" "it-security"
+add_to_group "emily.zhao@innogrid.com" "it-security"
+add_to_group "kevin.nguyen@innogrid.com" "it-security"
 
-# IAM team
-Add-ToGroup "ryan.mitchell@innogrid.com" "iam-team"
-Add-ToGroup "aisha.patel@innogrid.com" "iam-team"
-Add-ToGroup "miguel.torres@innogrid.com" "iam-team"
+add_to_group "ryan.mitchell@innogrid.com" "iam-team"
+add_to_group "aisha.patel@innogrid.com" "iam-team"
+add_to_group "miguel.torres@innogrid.com" "iam-team"
 
-# SOC team
-Add-ToGroup "tanya.brooks@innogrid.com" "soc-team"
-Add-ToGroup "jake.hoffman@innogrid.com" "soc-team"
-Add-ToGroup "olivia.reed@innogrid.com" "soc-team"
+add_to_group "tanya.brooks@innogrid.com" "soc-team"
+add_to_group "jake.hoffman@innogrid.com" "soc-team"
+add_to_group "olivia.reed@innogrid.com" "soc-team"
 
-# Service desk
-Add-ToGroup "carlos.mendez@innogrid.com" "service-desk"
-Add-ToGroup "emily.zhao@innogrid.com" "service-desk"
-Add-ToGroup "kevin.nguyen@innogrid.com" "service-desk"
+add_to_group "carlos.mendez@innogrid.com" "service-desk"
+add_to_group "emily.zhao@innogrid.com" "service-desk"
+add_to_group "kevin.nguyen@innogrid.com" "service-desk"
 
-# Break glass
-Add-ToGroup "ryan.mitchell@innogrid.com" "break-glass"
-Add-ToGroup "aisha.patel@innogrid.com" "break-glass"
+add_to_group "ryan.mitchell@innogrid.com" "break-glass"
+add_to_group "aisha.patel@innogrid.com" "break-glass"
 ```
 
 ### AWS Console
@@ -1255,46 +1253,51 @@ resource "aws_ssoadmin_account_assignment" "break_glass_admin_prod" {
 
 ### AWS CLI
 
-```powershell
-$InstanceArn = "arn:aws:sso:::instance/ssoins-1234567890abcdef"
-$NonprodId = "123456789012"
-$SecurityId = "444455556666"
-$MgmtId = "111122223333"
-$ProdId = "777788889999"
-$IdentityStoreId = "d-9a7b8c6d5e"
+```bash
+INSTANCE_ARN="arn:aws:sso:::instance/ssoins-1234567890abcdef"
+NONPROD_ID="123456789012"
+SECURITY_ID="444455556666"
+MGMT_ID="111122223333"
+PROD_ID="777788889999"
+IDENTITY_STORE_ID="d-9a7b8c6d5e"
 
-function Assign-GroupToAccount($groupName, $permissionSetName, $accountId) {
-  $groupId = aws identitystore list-groups --identity-store-id $IdentityStoreId `
-    --filter AttributePath=DisplayName,AttributeValue=$groupName `
-    --query "Groups[0].GroupId" --output text
+assign_group_to_account() {
+  local GROUP_NAME="$1"
+  local PS_NAME="$2"
+  local ACCOUNT_ID="$3"
+  local GROUP_ID
+  local PS_ARN
 
-  $psArn = aws sso-admin list-permission-sets --instance-arn $InstanceArn `
-    --query "PermissionSets[?contains(@, '$permissionSetName')]" --output text
+  GROUP_ID=$(aws identitystore list-groups --identity-store-id "$IDENTITY_STORE_ID" \
+    --filter "AttributePath=DisplayName,AttributeValue=$GROUP_NAME" \
+    --query "Groups[0].GroupId" --output text)
 
-  aws sso-admin create-account-assignment `
-    --instance-arn $InstanceArn `
-    --permission-set-arn $psArn `
-    --principal-type GROUP `
-    --principal-id $groupId `
-    --target-id $accountId `
+  PS_ARN=$(aws sso-admin list-permission-sets --instance-arn "$INSTANCE_ARN" \
+    --query "PermissionSets[?contains(@, '$PS_NAME')]" --output text)
+
+  aws sso-admin create-account-assignment \
+    --instance-arn "$INSTANCE_ARN" \
+    --permission-set-arn "$PS_ARN" \
+    --principal-type GROUP \
+    --principal-id "$GROUP_ID" \
+    --target-id "$ACCOUNT_ID" \
     --target-type AWS_ACCOUNT
 
-  Write-Host "Assigned $groupName → $permissionSetName → Account $accountId"
+  echo "Assigned $GROUP_NAME → $PS_NAME → Account $ACCOUNT_ID"
 }
 
-# Assignments
-Assign-GroupToAccount "engineering" "DevAccess" $NonprodId
-Assign-GroupToAccount "platform-engineers" "DevAccess" $NonprodId
-Assign-GroupToAccount "app-dev" "DevAccess" $NonprodId
-Assign-GroupToAccount "qa-engineers" "DevAccess" $NonprodId
-Assign-GroupToAccount "it-security" "ReadOnly" $SecurityId
-Assign-GroupToAccount "iam-team" "AdministratorAccess" $MgmtId
-Assign-GroupToAccount "soc-team" "SecurityAudit" $SecurityId
-Assign-GroupToAccount "service-desk" "ReadOnly" $NonprodId
-Assign-GroupToAccount "break-glass" "AdministratorAccess" $MgmtId
-Assign-GroupToAccount "break-glass" "AdministratorAccess" $SecurityId
-Assign-GroupToAccount "break-glass" "AdministratorAccess" $NonprodId
-Assign-GroupToAccount "break-glass" "AdministratorAccess" $ProdId
+assign_group_to_account "engineering" "DevAccess" "$NONPROD_ID"
+assign_group_to_account "platform-engineers" "DevAccess" "$NONPROD_ID"
+assign_group_to_account "app-dev" "DevAccess" "$NONPROD_ID"
+assign_group_to_account "qa-engineers" "DevAccess" "$NONPROD_ID"
+assign_group_to_account "it-security" "ReadOnly" "$SECURITY_ID"
+assign_group_to_account "iam-team" "AdministratorAccess" "$MGMT_ID"
+assign_group_to_account "soc-team" "SecurityAudit" "$SECURITY_ID"
+assign_group_to_account "service-desk" "ReadOnly" "$NONPROD_ID"
+assign_group_to_account "break-glass" "AdministratorAccess" "$MGMT_ID"
+assign_group_to_account "break-glass" "AdministratorAccess" "$SECURITY_ID"
+assign_group_to_account "break-glass" "AdministratorAccess" "$NONPROD_ID"
+assign_group_to_account "break-glass" "AdministratorAccess" "$PROD_ID"
 ```
 
 ### AWS Console
@@ -1439,14 +1442,14 @@ terraform {
 
 ### Deployment
 
-```powershell
+```bash
 # Step 1: Deploy backend infrastructure
-Set-Location "C:\terraform\backend-setup"
+cd terraform/backend-setup
 terraform init
 terraform apply -auto-approve
 
 # Step 2: Deploy Identity Centre resources
-Set-Location "C:\terraform\identity-centre"
+cd terraform/identity-centre
 terraform init -reconfigure
 terraform plan -out=ic-plan.tfplan
 terraform apply ic-plan.tfplan
@@ -1458,81 +1461,81 @@ terraform apply ic-plan.tfplan
 
 ### Verify Users
 
-```powershell
-$IdentityStoreId = "d-9a7b8c6d5e"
+```bash
+IDENTITY_STORE_ID="d-9a7b8c6d5e"
 
 # List all users
-aws identitystore list-users --identity-store-id $IdentityStoreId `
+aws identitystore list-users --identity-store-id "$IDENTITY_STORE_ID" \
   --query "Users[*].[UserName,DisplayName,UserType]" --output table
 
 # Expected: 18 users
-aws identitystore list-users --identity-store-id $IdentityStoreId `
+aws identitystore list-users --identity-store-id "$IDENTITY_STORE_ID" \
   --query "length(Users)"
 # Expected output: 18
 ```
 
 ### Verify Groups
 
-```powershell
+```bash
 # List all groups
-aws identitystore list-groups --identity-store-id $IdentityStoreId `
+aws identitystore list-groups --identity-store-id "$IDENTITY_STORE_ID" \
   --query "Groups[*].[DisplayName,Description]" --output table
 
 # Expected: 10 groups
-aws identitystore list-groups --identity-store-id $IdentityStoreId `
+aws identitystore list-groups --identity-store-id "$IDENTITY_STORE_ID" \
   --query "length(Groups)"
 # Expected output: 10
 ```
 
 ### Verify Group Memberships
 
-```powershell
+```bash
 # Check members of engineering group
-$EngineeringGroupId = aws identitystore list-groups --identity-store-id $IdentityStoreId `
-  --filter AttributePath=DisplayName,AttributeValue=engineering `
-  --query "Groups[0].GroupId" --output text
+ENGINEERING_GROUP_ID=$(aws identitystore list-groups --identity-store-id "$IDENTITY_STORE_ID" \
+  --filter "AttributePath=DisplayName,AttributeValue=engineering" \
+  --query "Groups[0].GroupId" --output text)
 
-aws identitystore list-group-memberships --identity-store-id $IdentityStoreId `
-  --group-id $EngineeringGroupId --query "length(GroupMemberships)"
+aws identitystore list-group-memberships --identity-store-id "$IDENTITY_STORE_ID" \
+  --group-id "$ENGINEERING_GROUP_ID" --query "length(GroupMemberships)"
 # Expected: 9 members
 
 # Check members of iam-team
-$IamTeamGroupId = aws identitystore list-groups --identity-store-id $IdentityStoreId `
-  --filter AttributePath=DisplayName,AttributeValue=iam-team `
-  --query "Groups[0].GroupId" --output text
+IAM_TEAM_GROUP_ID=$(aws identitystore list-groups --identity-store-id "$IDENTITY_STORE_ID" \
+  --filter "AttributePath=DisplayName,AttributeValue=iam-team" \
+  --query "Groups[0].GroupId" --output text)
 
-aws identitystore list-group-memberships --identity-store-id $IdentityStoreId `
-  --group-id $IamTeamGroupId --query "GroupMemberships[*].MemberId"
+aws identitystore list-group-memberships --identity-store-id "$IDENTITY_STORE_ID" \
+  --group-id "$IAM_TEAM_GROUP_ID" --query "GroupMemberships[*].MemberId"
 # Expected: Ryan Mitchell, Aisha Patel, Miguel Torres
 ```
 
 ### Verify Permission Sets
 
-```powershell
-$InstanceArn = "arn:aws:sso:::instance/ssoins-1234567890abcdef"
+```bash
+INSTANCE_ARN="arn:aws:sso:::instance/ssoins-1234567890abcdef"
 
 # List all permission sets
-aws sso-admin list-permission-sets --instance-arn $InstanceArn `
+aws sso-admin list-permission-sets --instance-arn "$INSTANCE_ARN" \
   --query "PermissionSets[*]" --output table
 
 # Describe DevAccess
-$DevAccessArn = aws sso-admin list-permission-sets --instance-arn $InstanceArn `
-  --query "PermissionSets[?contains(@, 'DevAccess')]" --output text
+DEV_ACCESS_ARN=$(aws sso-admin list-permission-sets --instance-arn "$INSTANCE_ARN" \
+  --query "PermissionSets[?contains(@, 'DevAccess')]" --output text)
 
-aws sso-admin describe-permission-set `
-  --instance-arn $InstanceArn `
-  --permission-set-arn $DevAccessArn `
+aws sso-admin describe-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --permission-set-arn "$DEV_ACCESS_ARN" \
   --query "PermissionSet.[Name,SessionDuration,RelayState]"
 # Expected: "DevAccess", "PT8H", "https://console.aws.amazon.com/ec2"
 ```
 
 ### Verify Account Assignments
 
-```powershell
+```bash
 # List assignments for Nonproduction account
-aws sso-admin list-account-assignments `
-  --instance-arn $InstanceArn `
-  --account-id 123456789012 `
+aws sso-admin list-account-assignments \
+  --instance-arn "$INSTANCE_ARN" \
+  --account-id 123456789012 \
   --query "AccountAssignments[*].[PrincipalType,PrincipalId,PermissionSetArn]" --output table
 
 # Expected: engineering, platform-engineers, app-dev, qa-engineers, service-desk, break-glass
@@ -1540,11 +1543,11 @@ aws sso-admin list-account-assignments `
 
 ### End-to-End Test
 
-```powershell
+```bash
 # Generate a sign-in URL for the AWS access portal
 # (This is specific to the IAM Identity Centre instance)
-$PortalUrl = "https://d-9a7b8c6d5e.awsapps.com/start"
-Write-Host "Access portal URL: $PortalUrl"
+PORTAL_URL="https://d-9a7b8c6d5e.awsapps.com/start"
+echo "Access portal URL: $PORTAL_URL"
 
 # Instructions:
 # 1. Open the portal URL in a browser

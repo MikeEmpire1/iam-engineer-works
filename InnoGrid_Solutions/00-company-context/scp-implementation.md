@@ -214,8 +214,9 @@ Create each JSON file under `terraform/scp-boundaries/policies/` using the polic
 
 ### Deployment
 
-```powershell
+```bash
 # From the terraform/scp-boundaries directory
+cd terraform/scp-boundaries
 terraform init
 terraform plan -out=scp-plan.tfplan
 terraform apply scp-plan.tfplan
@@ -227,20 +228,20 @@ terraform apply scp-plan.tfplan
 
 ### Prerequisites
 
-```powershell
+```bash
 # Verify Organizations access
 aws organizations describe-organization
 
 # List OUs and their IDs
-aws organizations list-organizational-units-for-parent `
-  --parent-id (aws organizations list-roots --query "Roots[0].Id" --output text)
+ROOT_ID=$(aws organizations list-roots --query "Roots[0].Id" --output text)
+aws organizations list-organizational-units-for-parent --parent-id "$ROOT_ID"
 
 # Store OU IDs in variables (replace with your actual OU IDs)
-$MGMT_OU = "ou-xxxx-mgmt"
-$SEC_OU = "ou-xxxx-security"
-$INFRA_OU = "ou-xxxx-infra"
-$NONPROD_OU = "ou-xxxx-nonprod"
-$SANDBOX_OU = "ou-xxxx-sandbox"
+MGMT_OU="ou-xxxx-mgmt"
+SEC_OU="ou-xxxx-security"
+INFRA_OU="ou-xxxx-infra"
+NONPROD_OU="ou-xxxx-nonprod"
+SANDBOX_OU="ou-xxxx-sandbox"
 ```
 
 ### Step 1: Create Policy Files
@@ -254,56 +255,56 @@ Save each JSON policy from `aws-account-structure.md` as a separate file:
 
 ### Step 2: Create SCPs
 
-```powershell
+```bash
 # Create Deny-NonManagementServices
-$Policy1 = aws organizations create-policy `
-  --name "Deny-NonManagementServices" `
-  --description "Restrict Management OU to org admin, identity, billing, and logging services only" `
-  --type SERVICE_CONTROL_POLICY `
-  --content (Get-Content -Raw .\deny-non-management-services.json) `
-  --query "Policy.PolicySummary.Id" --output text
+POLICY1=$(aws organizations create-policy \
+  --name "Deny-NonManagementServices" \
+  --description "Restrict Management OU to org admin, identity, billing, and logging services only" \
+  --type SERVICE_CONTROL_POLICY \
+  --content "$(cat deny-non-management-services.json)" \
+  --query "Policy.PolicySummary.Id" --output text)
 
 # Create Deny-NonSecurityServices
-$Policy2 = aws organizations create-policy `
-  --name "Deny-NonSecurityServices" `
-  --description "Restrict Security OU to security monitoring, detection, and remediation services only" `
-  --type SERVICE_CONTROL_POLICY `
-  --content (Get-Content -Raw .\deny-non-security-services.json) `
-  --query "Policy.PolicySummary.Id" --output text
+POLICY2=$(aws organizations create-policy \
+  --name "Deny-NonSecurityServices" \
+  --description "Restrict Security OU to security monitoring, detection, and remediation services only" \
+  --type SERVICE_CONTROL_POLICY \
+  --content "$(cat deny-non-security-services.json)" \
+  --query "Policy.PolicySummary.Id" --output text)
 
 # Create Deny-SecurityToolTampering
-$Policy3 = aws organizations create-policy `
-  --name "Deny-SecurityToolTampering" `
-  --description "Prevent workload accounts from disabling centrally-managed security tools" `
-  --type SERVICE_CONTROL_POLICY `
-  --content (Get-Content -Raw .\deny-security-tool-tampering.json) `
-  --query "Policy.PolicySummary.Id" --output text
+POLICY3=$(aws organizations create-policy \
+  --name "Deny-SecurityToolTampering" \
+  --description "Prevent workload accounts from disabling centrally-managed security tools" \
+  --type SERVICE_CONTROL_POLICY \
+  --content "$(cat deny-security-tool-tampering.json)" \
+  --query "Policy.PolicySummary.Id" --output text)
 
 # Create Deny-ProductionResourcesInNonprod
-$Policy4 = aws organizations create-policy `
-  --name "Deny-ProductionResourcesInNonprod" `
-  --description "Block production-grade instance types and RDS classes in non-prod accounts" `
-  --type SERVICE_CONTROL_POLICY `
-  --content (Get-Content -Raw .\deny-production-resources-nonprod.json) `
-  --query "Policy.PolicySummary.Id" --output text
+POLICY4=$(aws organizations create-policy \
+  --name "Deny-ProductionResourcesInNonprod" \
+  --description "Block production-grade instance types and RDS classes in non-prod accounts" \
+  --type SERVICE_CONTROL_POLICY \
+  --content "$(cat deny-production-resources-nonprod.json)" \
+  --query "Policy.PolicySummary.Id" --output text)
 
 # Create Deny-PersistentResourcesInSandbox
-$Policy5 = aws organizations create-policy `
-  --name "Deny-PersistentResourcesInSandbox" `
-  --description "Block RDS, Secrets Manager creation, and persistent storage in sandbox" `
-  --type SERVICE_CONTROL_POLICY `
-  --content (Get-Content -Raw .\deny-persistent-resources-sandbox.json) `
-  --query "Policy.PolicySummary.Id" --output text
+POLICY5=$(aws organizations create-policy \
+  --name "Deny-PersistentResourcesInSandbox" \
+  --description "Block RDS, Secrets Manager creation, and persistent storage in sandbox" \
+  --type SERVICE_CONTROL_POLICY \
+  --content "$(cat deny-persistent-resources-sandbox.json)" \
+  --query "Policy.PolicySummary.Id" --output text)
 ```
 
 ### Step 3: Attach SCPs to OUs
 
-```powershell
-aws organizations attach-policy --policy-id $Policy1 --target-id $MGMT_OU
-aws organizations attach-policy --policy-id $Policy2 --target-id $SEC_OU
-aws organizations attach-policy --policy-id $Policy3 --target-id $INFRA_OU
-aws organizations attach-policy --policy-id $Policy4 --target-id $NONPROD_OU
-aws organizations attach-policy --policy-id $Policy5 --target-id $SANDBOX_OU
+```bash
+aws organizations attach-policy --policy-id "$POLICY1" --target-id "$MGMT_OU"
+aws organizations attach-policy --policy-id "$POLICY2" --target-id "$SEC_OU"
+aws organizations attach-policy --policy-id "$POLICY3" --target-id "$INFRA_OU"
+aws organizations attach-policy --policy-id "$POLICY4" --target-id "$NONPROD_OU"
+aws organizations attach-policy --policy-id "$POLICY5" --target-id "$SANDBOX_OU"
 ```
 
 ---
@@ -341,9 +342,9 @@ For each of the 5 SCPs:
 
 ### Verify SCPs Are Created
 
-```powershell
+```bash
 # List all SCPs in the organization
-aws organizations list-policies --filter SERVICE_CONTROL_POLICY `
+aws organizations list-policies --filter SERVICE_CONTROL_POLICY \
   --query "Policies[*].[Name,Id]" --output table
 
 # Expected: 5 new SCPs + any existing global SCPs
@@ -351,50 +352,50 @@ aws organizations list-policies --filter SERVICE_CONTROL_POLICY `
 
 ### Verify SCP Attachments
 
-```powershell
+```bash
 # Check which policies are attached to each OU
-aws organizations list-policies-for-target --target-id $MGMT_OU `
+aws organizations list-policies-for-target --target-id "$MGMT_OU" \
   --filter SERVICE_CONTROL_POLICY --query "Policies[*].Name"
 # Expected: Contains "Deny-NonManagementServices"
 
-aws organizations list-policies-for-target --target-id $SEC_OU `
+aws organizations list-policies-for-target --target-id "$SEC_OU" \
   --filter SERVICE_CONTROL_POLICY --query "Policies[*].Name"
 # Expected: Contains "Deny-NonSecurityServices"
 
-aws organizations list-policies-for-target --target-id $INFRA_OU `
+aws organizations list-policies-for-target --target-id "$INFRA_OU" \
   --filter SERVICE_CONTROL_POLICY --query "Policies[*].Name"
 # Expected: Contains "Deny-SecurityToolTampering"
 
-aws organizations list-policies-for-target --target-id $NONPROD_OU `
+aws organizations list-policies-for-target --target-id "$NONPROD_OU" \
   --filter SERVICE_CONTROL_POLICY --query "Policies[*].Name"
 # Expected: Contains "Deny-ProductionResourcesInNonprod"
 
-aws organizations list-policies-for-target --target-id $SANDBOX_OU `
+aws organizations list-policies-for-target --target-id "$SANDBOX_OU" \
   --filter SERVICE_CONTROL_POLICY --query "Policies[*].Name"
 # Expected: Contains "Deny-PersistentResourcesInSandbox"
 ```
 
 ### Verify SCP Content (Dry-Run)
 
-```powershell
+```bash
 # Test that a denied action is blocked in the Nonproduction OU
 # (requires credentials in the Nonproduction account)
-aws ec2 run-instances `
-  --image-id ami-0abcdef1234567890 `
-  --instance-type p4d.24xlarge `
+aws ec2 run-instances \
+  --image-id ami-0abcdef1234567890 \
+  --instance-type p4d.24xlarge \
   --dry-run
 # Expected: "An error occurred (UnauthorizedOperation) when calling the RunInstances operation:
 #  You are not authorized to perform this operation. Encoded authorization failure message"
 
 # Decode the failure message to confirm SCP denied it
-aws sts decode-authorization-message `
-  --encoded-message (aws ec2 run-instances ... 2>&1 | Select-String "encoded authorization failure message" | ForEach-Object { $_.ToString().Split(": ")[-1] })
+ENCODED_MSG=$(aws ec2 run-instances --image-id ami-0abcdef1234567890 --instance-type p4d.24xlarge --dry-run 2>&1 | grep -oP 'encoded authorization failure message: \K.+')
+aws sts decode-authorization-message --encoded-message "$ENCODED_MSG"
 # Check the "FailedDueToSCP" field in the decoded output
 ```
 
 ### Verify Management OU Restriction
 
-```powershell
+```bash
 # Try to launch an EC2 instance in the Management account (should be blocked)
 aws ec2 run-instances --image-id ami-0abcdef1234567890 --instance-type t3.micro --dry-run
 # Expected: Access denied (Management OU SCP blocks all EC2 actions)
@@ -402,14 +403,14 @@ aws ec2 run-instances --image-id ami-0abcdef1234567890 --instance-type t3.micro 
 
 ### Verify Sandbox Restrictions
 
-```powershell
+```bash
 # Try to create an RDS instance in the Sandbox account
-aws rds create-db-instance `
-  --db-instance-identifier test-sandbox-block `
-  --db-instance-class db.t3.micro `
-  --engine mysql `
-  --master-username admin `
-  --master-user-password TempPassword123 `
+aws rds create-db-instance \
+  --db-instance-identifier test-sandbox-block \
+  --db-instance-class db.t3.micro \
+  --engine mysql \
+  --master-username admin \
+  --master-user-password TempPassword123 \
   --allocated-storage 20
 # Expected: Access denied by SCP
 ```
@@ -500,23 +501,20 @@ When a new OU is created:
 
 ### Dry-Run Before Applying Changes
 
-```powershell
-aws organizations update-policy --policy-id $PolicyId `
-  --content (Get-Content -Raw .\updated-policy.json) `
-  --dry-run
+```bash
 # Note: --dry-run is not supported by all AWS Organizations APIs.
 # Instead, create a new policy version and test before setting it as default:
-aws organizations create-policy-version --policy-id $PolicyId `
-  --content (Get-Content -Raw .\new-policy.json) `
+aws organizations create-policy-version --policy-id "$POLICY_ID" \
+  --content "$(cat new-policy.json)" \
   --set-as-default
 ```
 
 ### Rollback
 
-```powershell
+```bash
 # Detach a policy
-aws organizations detach-policy --policy-id $PolicyId --target-id $OU_ID
+aws organizations detach-policy --policy-id "$POLICY_ID" --target-id "$OU_ID"
 
 # Delete a policy (must be detached first)
-aws organizations delete-policy --policy-id $PolicyId
+aws organizations delete-policy --policy-id "$POLICY_ID"
 ```

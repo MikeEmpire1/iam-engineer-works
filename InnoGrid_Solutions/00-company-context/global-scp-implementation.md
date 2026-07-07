@@ -267,19 +267,19 @@ These policies enforce baseline governance controls — root user lockdown, regi
 
 **Configuration — AWS CLI:**
 
-```powershell
+```bash
 # Get the management account ID
-$MGMT_ACCOUNT = aws organizations describe-organization --query "Organization.MasterAccountId" --output text
+MGMT_ACCOUNT=$(aws organizations describe-organization --query "Organization.MasterAccountId" --output text)
 
 # Enable all four Block Public Access settings at the organization level
-aws s3control put-public-access-block --account-id $MGMT_ACCOUNT --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+aws s3control put-public-access-block --account-id "$MGMT_ACCOUNT" --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 ```
 
 **Verification:**
 
-```powershell
+```bash
 # Confirm the settings are in effect
-aws s3control get-public-access-block --account-id $MGMT_ACCOUNT
+aws s3control get-public-access-block --account-id "$MGMT_ACCOUNT"
 ```
 
 **How it works:** When an Organization-level S3 Block Public Access policy is applied, AWS automatically rejects:
@@ -474,8 +474,9 @@ Create each JSON file under `terraform/global-scps/policies/` using the policy d
 
 ### Deployment
 
-```powershell
+```bash
 # From the terraform/global-scps directory
+cd terraform/global-scps
 terraform init
 terraform plan -out=scp-plan.tfplan
 terraform apply scp-plan.tfplan
@@ -487,13 +488,13 @@ terraform apply scp-plan.tfplan
 
 ### Prerequisites
 
-```powershell
+```bash
 # Verify Organizations access
 aws organizations describe-organization
 
 # Get the Root OU ID
-$ROOT_ID = aws organizations list-roots --query "Roots[0].Id" --output text
-Write-Host "Root ID: $ROOT_ID"
+ROOT_ID=$(aws organizations list-roots --query "Roots[0].Id" --output text)
+echo "Root ID: $ROOT_ID"
 ```
 
 ### Step 1: Create Policy Files
@@ -508,56 +509,56 @@ Create each JSON file using the policy documents from the **Policy Definitions**
 
 ### Step 2: Create SCPs
 
-```powershell
+```bash
 # Create Deny-RootActivity
-$Policy1 = aws organizations create-policy `
-  --name "Deny-RootActivity" `
-  --description "Block root user actions across all accounts; exempt support, billing, and account management" `
-  --type SERVICE_CONTROL_POLICY `
-  --content (Get-Content -Raw .\deny-root-activity.json) `
-  --query "Policy.PolicySummary.Id" --output text
+POLICY1=$(aws organizations create-policy \
+  --name "Deny-RootActivity" \
+  --description "Block root user actions across all accounts; exempt support, billing, and account management" \
+  --type SERVICE_CONTROL_POLICY \
+  --content "$(cat deny-root-activity.json)" \
+  --query "Policy.PolicySummary.Id" --output text)
 
 # Create Deny-NonCompliantRegions
-$Policy2 = aws organizations create-policy `
-  --name "Deny-NonCompliantRegions" `
-  --description "Restrict API calls to eu-west-2 and eu-west-1 only; global services exempted" `
-  --type SERVICE_CONTROL_POLICY `
-  --content (Get-Content -Raw .\deny-non-compliant-regions.json) `
-  --query "Policy.PolicySummary.Id" --output text
+POLICY2=$(aws organizations create-policy \
+  --name "Deny-NonCompliantRegions" \
+  --description "Restrict API calls to eu-west-2 and eu-west-1 only; global services exempted" \
+  --type SERVICE_CONTROL_POLICY \
+  --content "$(cat deny-non-compliant-regions.json)" \
+  --query "Policy.PolicySummary.Id" --output text)
 
 # Create Deny-UnapprovedInstanceTypes
-$Policy3 = aws organizations create-policy `
-  --name "Deny-UnapprovedInstanceTypes" `
-  --description "Allow only t3, m5, c5, r5 instance families across all accounts" `
-  --type SERVICE_CONTROL_POLICY `
-  --content (Get-Content -Raw .\deny-unapproved-instance-types.json) `
-  --query "Policy.PolicySummary.Id" --output text
+POLICY3=$(aws organizations create-policy \
+  --name "Deny-UnapprovedInstanceTypes" \
+  --description "Allow only t3, m5, c5, r5 instance families across all accounts" \
+  --type SERVICE_CONTROL_POLICY \
+  --content "$(cat deny-unapproved-instance-types.json)" \
+  --query "Policy.PolicySummary.Id" --output text)
 
 # Create Require-Encryption
-$Policy4 = aws organizations create-policy `
-  --name "Require-Encryption" `
-  --description "Enforce encryption at rest for EBS volumes and RDS instances" `
-  --type SERVICE_CONTROL_POLICY `
-  --content (Get-Content -Raw .\require-encryption.json) `
-  --query "Policy.PolicySummary.Id" --output text
+POLICY4=$(aws organizations create-policy \
+  --name "Require-Encryption" \
+  --description "Enforce encryption at rest for EBS volumes and RDS instances" \
+  --type SERVICE_CONTROL_POLICY \
+  --content "$(cat require-encryption.json)" \
+  --query "Policy.PolicySummary.Id" --output text)
 
 # Create Deny-PublicS3Buckets
-$Policy5 = aws organizations create-policy `
-  --name "Deny-PublicS3Buckets" `
-  --description "Block public ACLs on S3 buckets and objects" `
-  --type SERVICE_CONTROL_POLICY `
-  --content (Get-Content -Raw .\deny-public-s3-buckets.json) `
-  --query "Policy.PolicySummary.Id" --output text
+POLICY5=$(aws organizations create-policy \
+  --name "Deny-PublicS3Buckets" \
+  --description "Block public ACLs on S3 buckets and objects" \
+  --type SERVICE_CONTROL_POLICY \
+  --content "$(cat deny-public-s3-buckets.json)" \
+  --query "Policy.PolicySummary.Id" --output text)
 ```
 
 ### Step 3: Attach SCPs to Root
 
-```powershell
-aws organizations attach-policy --policy-id $Policy1 --target-id $ROOT_ID
-aws organizations attach-policy --policy-id $Policy2 --target-id $ROOT_ID
-aws organizations attach-policy --policy-id $Policy3 --target-id $ROOT_ID
-aws organizations attach-policy --policy-id $Policy4 --target-id $ROOT_ID
-aws organizations attach-policy --policy-id $Policy5 --target-id $ROOT_ID
+```bash
+aws organizations attach-policy --policy-id "$POLICY1" --target-id "$ROOT_ID"
+aws organizations attach-policy --policy-id "$POLICY2" --target-id "$ROOT_ID"
+aws organizations attach-policy --policy-id "$POLICY3" --target-id "$ROOT_ID"
+aws organizations attach-policy --policy-id "$POLICY4" --target-id "$ROOT_ID"
+aws organizations attach-policy --policy-id "$POLICY5" --target-id "$ROOT_ID"
 ```
 
 ---
@@ -596,9 +597,9 @@ For each of the 5 SCPs:
 
 ### Verify SCPs Are Created
 
-```powershell
+```bash
 # List all SCPs in the organization
-aws organizations list-policies --filter SERVICE_CONTROL_POLICY `
+aws organizations list-policies --filter SERVICE_CONTROL_POLICY \
   --query "Policies[*].[Name,Id]" --output table
 
 # Expected: 5 new global SCPs + any existing OU-specific SCPs
@@ -606,10 +607,10 @@ aws organizations list-policies --filter SERVICE_CONTROL_POLICY `
 
 ### Verify SCP Attachments to Root
 
-```powershell
+```bash
 # Check which policies are attached to the Root
-$ROOT_ID = aws organizations list-roots --query "Roots[0].Id" --output text
-aws organizations list-policies-for-target --target-id $ROOT_ID `
+ROOT_ID=$(aws organizations list-roots --query "Roots[0].Id" --output text)
+aws organizations list-policies-for-target --target-id "$ROOT_ID" \
   --filter SERVICE_CONTROL_POLICY --query "Policies[*].Name"
 # Expected:
 #   Deny-RootActivity
@@ -621,7 +622,7 @@ aws organizations list-policies-for-target --target-id $ROOT_ID `
 
 ### Verify Root Activity Block
 
-```powershell
+```bash
 # Attempt an action as root principal (e.g., create an IAM user)
 # Requires root credentials in any member account
 aws iam create-user --user-name test-root-block
@@ -630,7 +631,7 @@ aws iam create-user --user-name test-root-block
 
 ### Verify Region Restriction
 
-```powershell
+```bash
 # Try to describe EC2 in a blocked region (e.g., us-east-1)
 # Requires credentials in any member account
 aws ec2 describe-instances --region us-east-1 --dry-run
@@ -643,7 +644,7 @@ aws ec2 describe-instances --region eu-west-2 --dry-run
 
 ### Verify Approved Instance Types
 
-```powershell
+```bash
 # Try to launch a blocked instance type
 aws ec2 run-instances --image-id ami-0abcdef1234567890 --instance-type p4d.24xlarge --dry-run
 # Expected: Access denied by SCP
@@ -655,48 +656,48 @@ aws ec2 run-instances --image-id ami-0abcdef1234567890 --instance-type t3.micro 
 
 ### Verify Encryption Enforcement
 
-```powershell
+```bash
 # Try to create an unencrypted RDS instance
-aws rds create-db-instance `
-  --db-instance-identifier test-encrypt-block `
-  --db-instance-class db.t3.micro `
-  --engine mysql `
-  --master-username admin `
-  --master-user-password TempPassword123 `
-  --allocated-storage 20 `
+aws rds create-db-instance \
+  --db-instance-identifier test-encrypt-block \
+  --db-instance-class db.t3.micro \
+  --engine mysql \
+  --master-username admin \
+  --master-user-password TempPassword123 \
+  --allocated-storage 20 \
   --no-storage-encrypted
 # Expected: Access denied by SCP
 
 # Try to launch an EC2 instance without EBS encryption
-aws ec2 run-instances --image-id ami-0abcdef1234567890 --instance-type t3.micro `
-  --block-device-mappings DeviceName=/dev/sda1,Ebs={VolumeSize=20,Encrypted=false} --dry-run
+aws ec2 run-instances --image-id ami-0abcdef1234567890 --instance-type t3.micro \
+  --block-device-mappings "DeviceName=/dev/sda1,Ebs={VolumeSize=20,Encrypted=false}" --dry-run
 # Expected: Access denied by SCP
 ```
 
 ### Verify Public S3 Block
 
-```powershell
+```bash
 # Try to set a public-read ACL on a bucket
 aws s3api put-bucket-acl --bucket test-block-public --acl public-read
 # Expected: Access denied by SCP
 
 # Verify organisation-level Block Public Access denies public bucket policies
-aws s3api put-bucket-policy --bucket test-block-public --policy "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::test-block-public/*\"}]}"
+aws s3api put-bucket-policy --bucket test-block-public --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::test-block-public/*"}]}'
 # Expected: Access denied by organisation policy
 
 # Verify organisation-level Block Public Access prevents disabling the settings
-aws s3control put-public-access-block --account-id $MGMT_ACCOUNT `
+aws s3control put-public-access-block --account-id "$MGMT_ACCOUNT" \
   --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
 # Expected: Access denied by organisation policy
 ```
 
 ### Decode a Denied Request
 
-```powershell
+```bash
 # When you receive an encoded authorization failure message, decode it:
-aws sts decode-authorization-message `
-  --encoded-message "<encoded_message>" `
-  --query "DecodedMessage" --output text | ConvertFrom-Json | Select-Object -ExpandProperty context
+aws sts decode-authorization-message \
+  --encoded-message "<encoded_message>" \
+  --query "DecodedMessage" --output text | jq -r '.context'
 # Check the "FailedDueToSCP" field to confirm which SCP blocked the request
 ```
 
@@ -770,9 +771,9 @@ ORDER BY eventtime DESC;
 1. Update the `aws-account-structure.md` documentation
 2. Add the new family to the `ec2:InstanceType` allow-list in `deny-unapproved-instance-types.json`
 3. Run `terraform apply` or use:
-   ```powershell
-   aws organizations update-policy --policy-id $PolicyId `
-     --content (Get-Content -Raw .\deny-unapproved-instance-types.json)
+   ```bash
+   aws organizations update-policy --policy-id "$POLICY_ID" \
+     --content "$(cat deny-unapproved-instance-types.json)"
    ```
 
 ### Adding a New Global Service to the Region Exemption List
@@ -785,25 +786,25 @@ When AWS launches a new global service, you may see `AccessDenied` errors in Clo
 
 ### Removing an SCP (Rollback)
 
-```powershell
+```bash
 # Detach from Root
-aws organizations detach-policy --policy-id $PolicyId --target-id $ROOT_ID
+aws organizations detach-policy --policy-id "$POLICY_ID" --target-id "$ROOT_ID"
 
 # Delete the policy (must be detached first)
-aws organizations delete-policy --policy-id $PolicyId
+aws organizations delete-policy --policy-id "$POLICY_ID"
 ```
 
 ### Testing Policy Changes (Versioning)
 
-```powershell
+```bash
 # Create a new policy version (can have up to 5 versions)
-aws organizations create-policy-version --policy-id $PolicyId `
-  --content (Get-Content -Raw .\new-policy.json)
+aws organizations create-policy-version --policy-id "$POLICY_ID" \
+  --content "$(cat new-policy.json)"
 
 # List versions
-aws organizations list-policy-versions --policy-id $PolicyId
+aws organizations list-policy-versions --policy-id "$POLICY_ID"
 
 # Set the new version as default (active)
-aws organizations update-policy --policy-id $PolicyId `
+aws organizations update-policy --policy-id "$POLICY_ID" \
   --set-as-default
 ```
