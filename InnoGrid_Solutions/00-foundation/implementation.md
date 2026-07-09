@@ -293,7 +293,7 @@ resource "aws_ssoadmin_managed_policy_attachment" "power_user_attach" {
 ```bash
 INSTANCE_ARN="arn:aws:sso:::instance/ssoins-1234567890abcdef"
 
-# Create DevAccess permission set
+# ── DevAccess ──
 DEV_ACCESS_ARN=$(aws sso-admin create-permission-set \
   --instance-arn "$INSTANCE_ARN" \
   --name "DevAccess" \
@@ -301,20 +301,82 @@ DEV_ACCESS_ARN=$(aws sso-admin create-permission-set \
   --relay-state "https://console.aws.amazon.com/ec2" \
   --query "PermissionSet.PermissionSetArn" --output text)
 
-# Attach ReadOnlyAccess managed policy
 aws sso-admin attach-managed-policy-to-permission-set \
   --instance-arn "$INSTANCE_ARN" \
   --permission-set-arn "$DEV_ACCESS_ARN" \
   --managed-policy-arn "arn:aws:iam::aws:policy/ReadOnlyAccess"
 
-# Create inline policy for S3 dev artifacts
 aws sso-admin put-inline-policy-to-permission-set \
   --instance-arn "$INSTANCE_ARN" \
   --permission-set-arn "$DEV_ACCESS_ARN" \
-  --inline-policy "$(cat policies/dev-access-inline.json)"
+  --inline-policy '{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::inno-nonprod-dev-artifacts",
+        "arn:aws:s3:::inno-nonprod-dev-artifacts/*"
+      ]
+    }
+  ]
+}'
 
-# Repeat for ReadOnly, SecurityAudit, AdministratorAccess, PowerUserAccess
-# (omitted for brevity — same pattern with different names/policies)
+# ── ReadOnly ──
+READ_ONLY_ARN=$(aws sso-admin create-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --name "ReadOnly" \
+  --session-duration "PT4H" \
+  --relay-state "https://console.aws.amazon.com" \
+  --query "PermissionSet.PermissionSetArn" --output text)
+
+aws sso-admin attach-managed-policy-to-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --permission-set-arn "$READ_ONLY_ARN" \
+  --managed-policy-arn "arn:aws:iam::aws:policy/ReadOnlyAccess"
+
+# ── SecurityAudit ──
+SECURITY_AUDIT_ARN=$(aws sso-admin create-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --name "SecurityAudit" \
+  --session-duration "PT4H" \
+  --relay-state "https://console.aws.amazon.com/securityhub" \
+  --query "PermissionSet.PermissionSetArn" --output text)
+
+aws sso-admin attach-managed-policy-to-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --permission-set-arn "$SECURITY_AUDIT_ARN" \
+  --managed-policy-arn "arn:aws:iam::aws:policy/SecurityAudit"
+
+# ── AdministratorAccess ──
+ADMIN_ACCESS_ARN=$(aws sso-admin create-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --name "AdministratorAccess" \
+  --session-duration "PT1H" \
+  --relay-state "https://console.aws.amazon.com" \
+  --query "PermissionSet.PermissionSetArn" --output text)
+
+aws sso-admin attach-managed-policy-to-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --permission-set-arn "$ADMIN_ACCESS_ARN" \
+  --managed-policy-arn "arn:aws:iam::aws:policy/AdministratorAccess"
+
+# ── PowerUserAccess ──
+POWER_USER_ARN=$(aws sso-admin create-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --name "PowerUserAccess" \
+  --session-duration "PT4H" \
+  --relay-state "https://console.aws.amazon.com" \
+  --query "PermissionSet.PermissionSetArn" --output text)
+
+aws sso-admin attach-managed-policy-to-permission-set \
+  --instance-arn "$INSTANCE_ARN" \
+  --permission-set-arn "$POWER_USER_ARN" \
+  --managed-policy-arn "arn:aws:iam::aws:policy/PowerUserAccess"
 ```
 
 ### AWS Console
