@@ -767,7 +767,7 @@ create_user() {
     --user-name "$EMAIL" \
     --display-name "$GIVEN_NAME $FAMILY_NAME" \
     --name "GivenName=$GIVEN_NAME,FamilyName=$FAMILY_NAME" \
-    --emails "[{\"value\":\"$EMAIL\",\"primary\":true}]" \
+    --emails "[{\"Value\":\"$EMAIL\",\"Primary\":true}]" \
     --user-type "$USER_TYPE" \
     --locale "en-GB"
 }
