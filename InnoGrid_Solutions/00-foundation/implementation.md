@@ -1113,7 +1113,7 @@ add_to_group() {
   aws identitystore create-group-membership \
     --identity-store-id "$IDENTITY_STORE_ID" \
     --group-id "$GROUP_ID" \
-    --member-id "$USER_ID"
+    --member-id "UserId=$USER_ID"
 
   echo "Added $USER_EMAIL to $GROUP_NAME"
 }

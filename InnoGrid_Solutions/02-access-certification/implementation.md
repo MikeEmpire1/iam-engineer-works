@@ -339,7 +339,7 @@ financeGroupId=$(aws identitystore list-groups --identity-store-id "$identitySto
 
 # Re-add Grace to the finance group
 aws identitystore create-group-membership --identity-store-id "$identityStoreId" \
-  --group-id "$financeGroupId" --member-id "$graceUserId"
+  --group-id "$financeGroupId" --member-id "UserId=$graceUserId"
 
 echo "Grace Kim restored to finance group. Access reactivated."
 ```

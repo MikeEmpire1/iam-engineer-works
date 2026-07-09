@@ -194,7 +194,7 @@ USER_ID=$(aws identitystore list-users --identity-store-id "$IDENTITY_STORE_ID" 
   --query "Users[0].UserId" --output text)
 
 aws identitystore create-group-membership --identity-store-id "$IDENTITY_STORE_ID" \
-  --group-id "$GROUP_ID" --member-id "$USER_ID"
+  --group-id "$GROUP_ID" --member-id "UserId=$USER_ID"
 
 # Step 4: Update manager attribute (if using custom attributes)
 # Note: IAM Identity Centre does not natively support "manager" as a default attribute.
@@ -400,7 +400,7 @@ case "$EVENT_TYPE" in
       --filter "AttributePath=DisplayName,AttributeValue=$NEW_GROUP" \
       --query "Groups[0].GroupId" --output text)
     aws identitystore create-group-membership --identity-store-id "$IDENTITY_STORE_ID" \
-      --group-id "$NEW_GROUP_ID" --member-id "$USER_ID"
+      --group-id "$NEW_GROUP_ID" --member-id "UserId=$USER_ID"
 
     write_audit_log "MOVER COMPLETE: $USER_EMAIL. Removed from: $OLD_GROUP. Added to: $NEW_GROUP. Manager: $MANAGER"
     ;;

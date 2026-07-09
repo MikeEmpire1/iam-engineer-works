@@ -445,7 +445,7 @@ for email in "${!migration[@]}"; do
         --query "Groups[0].GroupId" --output text)
 
     aws identitystore create-group-membership --identity-store-id "$identityStoreId" \
-        --group-id "$groupId" --member-id "$userId"
+        --group-id "$groupId" --member-id "UserId=$userId"
     echo "  + $email → $groupName"
 done
 
