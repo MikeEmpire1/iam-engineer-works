@@ -1334,8 +1334,17 @@ assign_group_to_account() {
     --filter "AttributePath=DisplayName,AttributeValue=$GROUP_NAME" \
     --query "Groups[0].GroupId" --output text)
 
-  PS_ARN=$(aws sso-admin list-permission-sets --instance-arn "$INSTANCE_ARN" \
-    --query "PermissionSets[?contains(@, '$PS_NAME')]" --output text)
+  case "$PS_NAME" in
+    DevAccess)           PS_ARN="$DEV_ACCESS_ARN" ;;
+    ReadOnly)            PS_ARN="$READ_ONLY_ARN" ;;
+    SecurityAudit)       PS_ARN="$SECURITY_AUDIT_ARN" ;;
+    AdministratorAccess) PS_ARN="$ADMIN_ACCESS_ARN" ;;
+    PowerUserAccess)     PS_ARN="$POWER_USER_ARN" ;;
+    *)
+      echo "Unknown permission set: $PS_NAME" >&2
+      return 1
+      ;;
+  esac
 
   aws sso-admin create-account-assignment \
     --instance-arn "$INSTANCE_ARN" \
@@ -1580,10 +1589,7 @@ INSTANCE_ARN="arn:aws:sso:::instance/ssoins-1234567890abcdef"
 aws sso-admin list-permission-sets --instance-arn "$INSTANCE_ARN" \
   --query "PermissionSets[*]" --output table
 
-# Describe DevAccess
-DEV_ACCESS_ARN=$(aws sso-admin list-permission-sets --instance-arn "$INSTANCE_ARN" \
-  --query "PermissionSets[?contains(@, 'DevAccess')]" --output text)
-
+# Describe DevAccess (DEV_ACCESS_ARN was captured in Section 4)
 aws sso-admin describe-permission-set \
   --instance-arn "$INSTANCE_ARN" \
   --permission-set-arn "$DEV_ACCESS_ARN" \
